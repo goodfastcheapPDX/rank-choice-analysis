@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Setup - Ranked Elections Analyzer{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Welcome to Ranked Elections Analyzer</h2>
+    <p>To get started, you need to load and process Cast Vote Record (CVR) data.</p>
+    
+    <h3>Step 1: Process Your Data</h3>
+    <p>Use the command line tools to load your CVR data:</p>
+    
+    <div style="background: #f8f9fa; padding: 1rem; border-radius: 4px; font-family: monospace; margin: 1rem 0;">
+        # Process CVR data<br>
+        python scripts/process_data.py your_file.csv --db election_data.db<br><br>
+        
+        # Run STV tabulation<br>
+        python scripts/run_stv.py --db election_data.db<br><br>
+        
+        # Start web server<br>
+        python scripts/start_server.py --db election_data.db
+    </div>
+    
+    <h3>Expected Data Format</h3>
+    <p>Your CSV file should contain Cast Vote Record data with:</p>
+    <ul>
+        <li>Ballot identification columns (BallotID, PrecinctID, etc.)</li>
+        <li>Vote columns following the pattern: <code>Choice_[ID]_1:City of Portland, Councilor, District 2:[RANK]:Number of Winners 3:[CANDIDATE_NAME]:NON</code></li>
+        <li>Binary values (1 = vote cast, 0 = no vote)</li>
+    </ul>
+    
+    <h3>Sample Data</h3>
+    <p>You can test with the sample files in the repository:</p>
+    <ul>
+        <li><code>district2_sample_50k copy.csv</code> - 50k ballot sample</li>
+        <li><code>City_of_Portland__Councilor__District_2_2024_11_29_17_26_12.cvr copy.csv</code> - Full dataset</li>
+    </ul>
+    
+    <a href="/" class="btn">Refresh Page</a>
+</div>
+{% endblock %}

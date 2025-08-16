@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Ranked Elections Analyzer{% endblock %}
+
+{% block content %}
+<div class="grid">
+    <div class="stat-box">
+        <span class="stat-number">{{ summary.get('Total Ballots', 'N/A') }}</span>
+        <span class="stat-label">Total Ballots</span>
+    </div>
+    <div class="stat-box">
+        <span class="stat-number">{{ summary.get('Total Candidates', 'N/A') }}</span>
+        <span class="stat-label">Candidates</span>
+    </div>
+    <div class="stat-box">
+        <span class="stat-number">{{ summary.get('Average Ranks Per Ballot', 'N/A') }}</span>
+        <span class="stat-label">Avg. Ranks per Ballot</span>
+    </div>
+    <div class="stat-box">
+        <span class="stat-number">{{ summary.get('Most Common Ballot Length', 'N/A') }}</span>
+        <span class="stat-label">Most Common Length</span>
+    </div>
+</div>
+
+<div class="grid">
+    <div class="card">
+        <h2>First Choice Results</h2>
+        <div id="first-choice-chart"></div>
+        <div id="first-choice-table"></div>
+    </div>
+    
+    <div class="card">
+        <h2>Vote Distribution by Rank</h2>
+        <div id="rank-distribution-chart"></div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Quick Actions</h2>
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <a href="/ballots" class="btn">Explore Ballots</a>
+        <a href="/stv-results" class="btn">View STV Results</a>
+        <a href="/candidates" class="btn">Candidate Analysis</a>
+        <button onclick="runSTVAnalysis()" class="btn btn-secondary">Run STV Tabulation</button>
+    </div>
+</div>
+
+<div class="card">
+    <h2>STV Results</h2>
+    <div id="stv-results">
+        <p>Click "Run STV Tabulation" to see results</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Load dashboard data
+    async function loadDashboard() {
+        try {
+            // Load first choice results
+            const firstChoiceData = await fetchData('/api/first-choice');
+            displayFirstChoiceResults(firstChoiceData);
+            
+            // Load vote distribution by rank
+            const rankData = await fetchData('/api/votes-by-rank');
+            displayRankDistribution(rankData);
+            
+        } catch (error) {
+            console.error('Error loading dashboard:', error);
+        }
+    }
+    
+    function displayFirstChoiceResults(data) {
+        // Create bar chart
+        const trace = {
+            x: data.slice(0, 10).map(d => d.candidate_name),
+            y: data.slice(0, 10).map(d => d.first_choice_votes),
+            type: 'bar',
+            marker: {
+                color: 'steelblue'
+            }
+        };
+        
+        const layout = {
+            title: 'Top 10 First Choice Results',
+            xaxis: { title: 'Candidate' },
+            yaxis: { title: 'Votes' },
+            margin: { l: 50, r: 50, t: 50, b: 100 }
+        };
+        
+        Plotly.newPlot('first-choice-chart', [trace], layout, {responsive: true});
+        
+        // Create table
+        let tableHTML = '<table><thead><tr><th>Rank</th><th>Candidate</th><th>Votes</th><th>Percentage</th></tr></thead><tbody>';
+        data.slice(0, 10).forEach((candidate, index) => {
+            tableHTML += `<tr>
+                <td>${index + 1}</td>
+                <td>${candidate.candidate_name}</td>
+                <td>${candidate.first_choice_votes.toLocaleString()}</td>
+                <td>${candidate.percentage}%</td>
+            </tr>`;
+        });
+        tableHTML += '</tbody></table>';
+        
+        document.getElementById('first-choice-table').innerHTML = tableHTML;
+    }
+    
+    function displayRankDistribution(data) {
+        // Group data by rank position
+        const rankGroups = {};
+        data.forEach(row => {
+            if (!rankGroups[row.rank_position]) {
+                rankGroups[row.rank_position] = [];
+            }
+            rankGroups[row.rank_position].push(row);
+        });
+        
+        // Create stacked bar chart showing top candidates for each rank
+        const traces = [];
+        const ranks = Object.keys(rankGroups).sort((a, b) => parseInt(a) - parseInt(b));
+        
+        // Get unique candidates across all ranks
+        const allCandidates = [...new Set(data.map(d => d.candidate_name))];
+        const colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'];
+        
+        ranks.slice(0, 6).forEach(rank => {
+            const rankData = rankGroups[rank].slice(0, 5); // Top 5 for each rank
+            
+            const trace = {
+                x: [`Rank ${rank}`],
+                y: [rankData.reduce((sum, d) => sum + d.total_votes, 0)],
+                type: 'bar',
+                name: `Rank ${rank}`,
+                text: rankData.map(d => `${d.candidate_name}: ${d.total_votes}`).join('<br>'),
+                textposition: 'inside'
+            };
+            traces.push(trace);
+        });
+        
+        const layout = {
+            title: 'Vote Distribution by Rank Position',
+            xaxis: { title: 'Rank Position' },
+            yaxis: { title: 'Total Votes' },
+            barmode: 'group'
+        };
+        
+        Plotly.newPlot('rank-distribution-chart', traces, layout, {responsive: true});
+    }
+    
+    async function runSTVAnalysis() {
+        showLoading('stv-results');
+        
+        try {
+            const results = await fetchData('/api/stv-results');
+            displaySTVResults(results);
+        } catch (error) {
+            showError('stv-results', error.message);
+        }
+    }
+    
+    function displaySTVResults(results) {
+        let html = '<h3>STV Election Results</h3>';
+        
+        // Show winners
+        html += '<h4>Elected Candidates:</h4><ul>';
+        results.final_results
+            .filter(r => r.status === 'elected')
+            .forEach((candidate, index) => {
+                html += `<li><strong>${index + 1}. ${candidate.candidate_name}</strong> - ${candidate.final_votes.toFixed(1)} votes (Round ${candidate.election_round})</li>`;
+            });
+        html += '</ul>';
+        
+        // Show round summary
+        html += `<p><strong>Total Rounds:</strong> ${results.total_rounds}</p>`;
+        
+        // Show top non-elected candidates
+        const notElected = results.final_results.filter(r => r.status === 'not_elected').slice(0, 5);
+        if (notElected.length > 0) {
+            html += '<h4>Top Non-Elected Candidates:</h4><ul>';
+            notElected.forEach(candidate => {
+                html += `<li>${candidate.candidate_name} - ${candidate.final_votes.toFixed(1)} votes</li>`;
+            });
+            html += '</ul>';
+        }
+        
+        document.getElementById('stv-results').innerHTML = html;
+    }
+    
+    // Load dashboard when page loads
+    document.addEventListener('DOMContentLoaded', loadDashboard);
+</script>
+{% endblock %}
