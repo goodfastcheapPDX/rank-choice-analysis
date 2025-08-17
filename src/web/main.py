@@ -14,12 +14,14 @@ try:
     from ..analysis.stv import STVTabulator
     from ..analysis.verification import ResultsVerifier
     from ..analysis.coalition import CoalitionAnalyzer, convert_numpy_types
+    from ..analysis.candidate_metrics import CandidateMetrics
 except ImportError:
     from data.database import CVRDatabase
     from data.cvr_parser import CVRParser
     from analysis.stv import STVTabulator
     from analysis.verification import ResultsVerifier
     from analysis.coalition import CoalitionAnalyzer, convert_numpy_types
+    from analysis.candidate_metrics import CandidateMetrics
 
 logger = logging.getLogger(__name__)
 
@@ -726,6 +728,182 @@ async def get_coalition_type_breakdown():
         return breakdown
     except Exception as e:
         logger.error(f"Coalition type breakdown failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+# Candidates Page and Enhanced API Endpoints
+@app.get("/candidates")
+async def candidates_page(request: Request):
+    """Candidates exploration page."""
+    return templates.TemplateResponse("candidates.html", {"request": request})
+
+@app.get("/api/candidates/enhanced")
+async def get_enhanced_candidates_list():
+    """Get list of all candidates with enhanced summary metrics."""
+    database = get_database()
+    if not database or not database.table_exists("ballots_long"):
+        raise HTTPException(status_code=400, detail="No data loaded")
+    
+    try:
+        metrics_analyzer = CandidateMetrics(database)
+        candidates_summary = metrics_analyzer.get_all_candidates_summary()
+        
+        return convert_numpy_types({"candidates": candidates_summary, "count": len(candidates_summary)})
+    except Exception as e:
+        logger.error(f"Enhanced candidates list failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+@app.get("/api/candidates/{candidate_id}/profile")
+async def get_candidate_profile(candidate_id: int):
+    """Get comprehensive candidate profile with all advanced metrics."""
+    database = get_database()
+    if not database or not database.table_exists("ballots_long"):
+        raise HTTPException(status_code=400, detail="No data loaded")
+    
+    try:
+        metrics_analyzer = CandidateMetrics(database)
+        profile = metrics_analyzer.get_comprehensive_candidate_profile(candidate_id)
+        
+        if not profile:
+            raise HTTPException(status_code=404, detail="Candidate not found")
+        
+        # Convert dataclass to dict for JSON serialization
+        profile_dict = {
+            "candidate_id": profile.candidate_id,
+            "candidate_name": profile.candidate_name,
+            "total_ballots": profile.total_ballots,
+            "first_choice_votes": profile.first_choice_votes,
+            "first_choice_percentage": profile.first_choice_percentage,
+            "vote_strength_index": profile.vote_strength_index,
+            "cross_camp_appeal": profile.cross_camp_appeal,
+            "transfer_efficiency": profile.transfer_efficiency,
+            "ranking_consistency": profile.ranking_consistency,
+            "elimination_round": profile.elimination_round,
+            "final_status": profile.final_status,
+            "vote_progression": profile.vote_progression,
+            "top_coalition_partners": profile.top_coalition_partners,
+            "supporter_demographics": profile.supporter_demographics
+        }
+        
+        return convert_numpy_types(profile_dict)
+    except Exception as e:
+        logger.error(f"Candidate profile failed for {candidate_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+@app.get("/api/candidates/{candidate_id}/supporters")
+async def get_candidate_supporters_analysis(candidate_id: int):
+    """Get detailed supporter analysis for a candidate."""
+    database = get_database()
+    if not database or not database.table_exists("ballots_long"):
+        raise HTTPException(status_code=400, detail="No data loaded")
+    
+    try:
+        metrics_analyzer = CandidateMetrics(database)
+        voter_behavior = metrics_analyzer.get_voter_behavior_analysis(candidate_id)
+        
+        if not voter_behavior:
+            raise HTTPException(status_code=404, detail="Candidate not found")
+        
+        # Convert dataclass to dict
+        behavior_dict = {
+            "candidate_id": voter_behavior.candidate_id,
+            "candidate_name": voter_behavior.candidate_name,
+            "bullet_voters": voter_behavior.bullet_voters,
+            "bullet_voter_percentage": voter_behavior.bullet_voter_percentage,
+            "avg_ranking_position": voter_behavior.avg_ranking_position,
+            "ranking_distribution": voter_behavior.ranking_distribution,
+            "consistency_score": voter_behavior.consistency_score,
+            "polarization_index": voter_behavior.polarization_index
+        }
+        
+        return convert_numpy_types(behavior_dict)
+    except Exception as e:
+        logger.error(f"Supporter analysis failed for {candidate_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+@app.get("/api/candidates/{candidate_id}/transfers")
+async def get_candidate_transfer_analysis(candidate_id: int):
+    """Get detailed transfer efficiency analysis for a candidate."""
+    database = get_database()
+    if not database or not database.table_exists("ballots_long"):
+        raise HTTPException(status_code=400, detail="No data loaded")
+    
+    try:
+        metrics_analyzer = CandidateMetrics(database)
+        transfer_analysis = metrics_analyzer.get_transfer_efficiency_analysis(candidate_id)
+        
+        if not transfer_analysis:
+            raise HTTPException(status_code=404, detail="Candidate not found")
+        
+        # Convert dataclass to dict
+        transfer_dict = {
+            "candidate_id": transfer_analysis.candidate_id,
+            "candidate_name": transfer_analysis.candidate_name,
+            "total_transferable_votes": transfer_analysis.total_transferable_votes,
+            "successful_transfers": transfer_analysis.successful_transfers,
+            "transfer_efficiency_rate": transfer_analysis.transfer_efficiency_rate,
+            "avg_transfer_distance": transfer_analysis.avg_transfer_distance,
+            "top_transfer_destinations": transfer_analysis.top_transfer_destinations,
+            "transfer_pattern_type": transfer_analysis.transfer_pattern_type
+        }
+        
+        return convert_numpy_types(transfer_dict)
+    except Exception as e:
+        logger.error(f"Transfer analysis failed for {candidate_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+@app.get("/api/candidates/{candidate_id}/comparison/{other_candidate_id}")
+async def get_candidate_comparison(candidate_id: int, other_candidate_id: int):
+    """Get head-to-head comparison between two candidates."""
+    database = get_database()
+    if not database or not database.table_exists("ballots_long"):
+        raise HTTPException(status_code=400, detail="No data loaded")
+    
+    try:
+        metrics_analyzer = CandidateMetrics(database)
+        
+        # Get profiles for both candidates
+        profile1 = metrics_analyzer.get_comprehensive_candidate_profile(candidate_id)
+        profile2 = metrics_analyzer.get_comprehensive_candidate_profile(other_candidate_id)
+        
+        if not profile1 or not profile2:
+            raise HTTPException(status_code=404, detail="One or both candidates not found")
+        
+        # Get coalition analysis between the two
+        coalition_analyzer = CoalitionAnalyzer(database)
+        pair_analysis = coalition_analyzer.get_detailed_pair_analysis(candidate_id, other_candidate_id)
+        
+        comparison = {
+            "candidate_1": {
+                "candidate_id": profile1.candidate_id,
+                "candidate_name": profile1.candidate_name,
+                "first_choice_votes": profile1.first_choice_votes,
+                "first_choice_percentage": profile1.first_choice_percentage,
+                "vote_strength_index": profile1.vote_strength_index,
+                "cross_camp_appeal": profile1.cross_camp_appeal,
+                "transfer_efficiency": profile1.transfer_efficiency,
+                "ranking_consistency": profile1.ranking_consistency
+            },
+            "candidate_2": {
+                "candidate_id": profile2.candidate_id,
+                "candidate_name": profile2.candidate_name,
+                "first_choice_votes": profile2.first_choice_votes,
+                "first_choice_percentage": profile2.first_choice_percentage,
+                "vote_strength_index": profile2.vote_strength_index,
+                "cross_camp_appeal": profile2.cross_camp_appeal,
+                "transfer_efficiency": profile2.transfer_efficiency,
+                "ranking_consistency": profile2.ranking_consistency
+            },
+            "coalition_analysis": {
+                "shared_ballots": pair_analysis.shared_ballots if pair_analysis else 0,
+                "coalition_strength_score": pair_analysis.coalition_strength_score if pair_analysis else 0,
+                "coalition_type": pair_analysis.coalition_type if pair_analysis else "insufficient_data",
+                "avg_ranking_distance": pair_analysis.avg_ranking_distance if pair_analysis else None
+            } if pair_analysis else None
+        }
+        
+        return convert_numpy_types(comparison)
+    except Exception as e:
+        logger.error(f"Candidate comparison failed for {candidate_id} vs {other_candidate_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
 if __name__ == "__main__":

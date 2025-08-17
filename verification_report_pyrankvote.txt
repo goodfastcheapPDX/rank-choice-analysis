@@ -1,0 +1,27 @@
+============================================================
+ELECTION RESULTS VERIFICATION REPORT
+============================================================
+❌ VERIFICATION FAILED - Discrepancies found
+
+WINNERS VERIFICATION:
+✅ Winners match official results
+Official winners: Sameer Kanal, Dan Ryan, Elana Pirtle-Guiney
+Our winners: Elana Pirtle-Guiney, Dan Ryan, Sameer Kanal
+
+FIRST CHOICE VOTE COUNT VERIFICATION:
+Total vote difference: 1452.0
+Max candidate difference: 476.0
+Candidates with differences: 20
+
+Largest discrepancies:
+  Liz Taylor: Official=628.0, Ours=672, Diff=44.0
+  Sam Sachs: Official=304.0, Ours=344, Diff=40.0
+  Will Mespelt: Official=759.0, Ours=782, Diff=23.0
+  Debbie Kitchin: Official=1228.0, Ours=1250, Diff=22.0
+  Antonio Jamal PettyJohnBlue: Official=217.0, Ours=235, Diff=18.0
+
+OFFICIAL ELECTION METADATA:
+  Election Date: November 05 2024
+  Report Date: December 02 2024 03:04:45 PM
+  Registered Voters: 119121
+  Threshold: 19290

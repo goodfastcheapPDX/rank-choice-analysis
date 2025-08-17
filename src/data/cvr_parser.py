@@ -92,21 +92,30 @@ class CVRParser:
         choice_columns = self.db.query("SELECT DISTINCT column_name FROM candidate_columns")
         column_list = "', '".join(choice_columns['column_name'].tolist())
         
-        # Create dynamic SQL for unpivoting
+        # Create dynamic SQL for unpivoting using UNION ALL approach
+        # Build individual SELECT statements for each choice column
+        select_statements = []
+        for _, row in choice_columns.iterrows():
+            col_name = row['column_name']
+            # Escape single quotes in column names
+            escaped_col = col_name.replace("'", "''")
+            select_statements.append(f"""
+                SELECT 
+                    BallotID,
+                    PrecinctID,
+                    BallotStyleID,
+                    '{escaped_col}' as column_name,
+                    CAST("{col_name}" AS INTEGER) as has_vote
+                FROM rcv_data
+                WHERE Status = 0 AND "{col_name}" = 1
+            """)
+        
+        union_sql = " UNION ALL ".join(select_statements)
+        
         normalize_sql = f"""
         CREATE OR REPLACE TABLE ballots_long AS
         WITH unpivoted AS (
-            SELECT 
-                BallotID,
-                PrecinctID,
-                BallotStyleID,
-                column_name,
-                CAST(column_value AS INTEGER) as has_vote
-            FROM rcv_data
-            WHERE Status = 0  -- Include only original ballots (not remade)
-            UNPIVOT (
-                column_value FOR column_name IN ('{column_list}')
-            )
+            {union_sql}
         )
         SELECT 
             u.BallotID,
@@ -117,8 +126,7 @@ class CVRParser:
             cc.rank_position,
             u.has_vote
         FROM unpivoted u
-        JOIN candidate_columns cc ON u.column_name = cc.column_name
-        WHERE u.has_vote = 1;
+        JOIN candidate_columns cc ON u.column_name = cc.column_name;
         """
         
         # Execute the dynamic SQL
