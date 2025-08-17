@@ -85,6 +85,23 @@ class OfficialResultsParser:
         if data_start is None:
             raise ValueError("Could not find data section in official results")
         
+        # Extract winners from the full file (before data section)
+        for line in lines:
+            if line.startswith("Met threshold for election"):
+                # Split by commas and look for winner names
+                parts = line.split(",")
+                for part in parts:
+                    part = part.strip()
+                    # Skip empty parts, the header text, and newlines
+                    if part and "Met threshold" not in part and part not in ["", "\n"]:
+                        # Handle multiple winners in same cell (e.g., "Dan Ryan; Elana Pirtle-Guiney")
+                        if ";" in part:
+                            names = [name.strip() for name in part.split(";")]
+                            self.winners.extend(names)
+                        else:
+                            self.winners.append(part)
+                break
+        
         # Parse the results data
         self._parse_results_data(lines[data_start:])
         
@@ -112,29 +129,16 @@ class OfficialResultsParser:
     
     def _parse_results_data(self, data_lines: List[str]):
         """Parse the results data section."""
-        # Find winners and defeated candidates
-        winners_line = None
-        defeated_line = None
+        # Note: The winners line is actually BEFORE the data section
+        # We need to search in the full file, not just data_lines
+        # This will be handled in parse_results() method instead
         
+        # Find defeated candidates line in data section 
+        defeated_line = None
         for line in data_lines:
-            if line.startswith("Met threshold for election"):
-                winners_line = line
-            elif line.startswith("Defeated"):
+            if line.startswith("Defeated"):
                 defeated_line = line
         
-        # Extract winners
-        if winners_line:
-            # Split by commas and look for winner names
-            parts = winners_line.split(",")
-            for part in parts:
-                part = part.strip()
-                if part and "Met threshold" not in part and part not in ["", ",,", ","]:
-                    # Handle multiple winners in same cell (e.g., "Dan Ryan; Elana Pirtle-Guiney")
-                    if ";" in part:
-                        names = [name.strip() for name in part.split(";")]
-                        self.winners.extend(names)
-                    else:
-                        self.winners.append(part)
         
         # Parse candidate data
         candidate_data = []
