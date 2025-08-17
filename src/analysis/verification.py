@@ -3,8 +3,41 @@ import numpy as np
 from typing import Dict, List, Tuple, Optional
 import logging
 from pathlib import Path
+import re
 
 logger = logging.getLogger(__name__)
+
+
+def normalize_candidate_name(name: str) -> str:
+    """
+    Normalize candidate name for comparison.
+    
+    Args:
+        name: Raw candidate name
+        
+    Returns:
+        Normalized name
+    """
+    if not name:
+        return ""
+    
+    # Strip whitespace and convert to lowercase for comparison
+    normalized = name.strip().lower()
+    
+    # Remove extra whitespace between words
+    normalized = re.sub(r'\s+', ' ', normalized)
+    
+    # Handle common variations
+    # Remove parentheses content like "(Mike)" 
+    normalized = re.sub(r'\s*\([^)]*\)\s*', ' ', normalized)
+    
+    # Normalize spacing around hyphens
+    normalized = re.sub(r'\s*-\s*', '-', normalized)
+    
+    # Strip again after transformations
+    normalized = normalized.strip()
+    
+    return normalized
 
 
 class OfficialResultsParser:
@@ -183,15 +216,16 @@ class ResultsVerifier:
         
         logger.info("Verifying results against official data")
         
-        # Create candidate name mapping
+        # Create candidate name mapping with normalization
         candidate_map = dict(zip(our_candidates['candidate_id'], our_candidates['candidate_name']))
         our_winner_names = [candidate_map.get(winner_id, f"ID-{winner_id}") for winner_id in our_winners]
         
-        # Verify winners
-        official_winners = set(self.official_data["winners"])
-        our_winner_names_set = set(our_winner_names)
+        # Normalize names for comparison
+        official_winners_normalized = {normalize_candidate_name(name) for name in self.official_data["winners"]}
+        our_winner_names_normalized = {normalize_candidate_name(name) for name in our_winner_names}
         
-        winners_match = official_winners == our_winner_names_set
+        # Verify winners using normalized names
+        winners_match = official_winners_normalized == our_winner_names_normalized
         
         # Verify first choice vote counts
         vote_comparisons = []
@@ -201,9 +235,14 @@ class ResultsVerifier:
             candidate_name = official_row["candidate_name"]
             official_votes = official_row["first_choice_votes"]
             
-            # Find our vote count for this candidate
-            our_row = our_first_choice[our_first_choice['candidate_name'] == candidate_name]
-            our_votes = our_row['first_choice_votes'].iloc[0] if not our_row.empty else 0
+            # Find our vote count for this candidate using normalized names
+            normalized_official_name = normalize_candidate_name(candidate_name)
+            our_votes = 0
+            
+            for _, our_row in our_first_choice.iterrows():
+                if normalize_candidate_name(our_row['candidate_name']) == normalized_official_name:
+                    our_votes = our_row['first_choice_votes']
+                    break
             
             vote_comparisons.append({
                 "candidate_name": candidate_name,
@@ -222,10 +261,12 @@ class ResultsVerifier:
         
         verification_report = {
             "winners_match": winners_match,
-            "official_winners": list(official_winners),
+            "official_winners": list(self.official_data["winners"]),
             "our_winners": our_winner_names,
-            "missing_winners": list(official_winners - our_winner_names_set),
-            "extra_winners": list(our_winner_names_set - official_winners),
+            "missing_winners": [name for name in self.official_data["winners"] 
+                             if normalize_candidate_name(name) not in our_winner_names_normalized],
+            "extra_winners": [name for name in our_winner_names 
+                           if normalize_candidate_name(name) not in official_winners_normalized],
             "vote_comparisons": vote_comparison_df,
             "total_vote_difference": total_vote_difference,
             "max_candidate_difference": max_candidate_difference,
