@@ -54,13 +54,18 @@ Future development will likely involve:
 ```
 src/
 ├── data/           # Data processing and database management
-│   ├── database.py     # DuckDB connection wrapper
+│   ├── database.py     # DuckDB connection manager with pooling and retry logic
 │   └── cvr_parser.py   # CVR data parsing and transformation
 ├── analysis/       # Analysis engines
-│   └── stv.py         # STV tabulation algorithm
+│   ├── stv.py         # Enhanced STV tabulation with vote flow tracking
+│   └── coalition.py   # Coalition analysis and proximity calculations
 └── web/           # Web application
-    ├── main.py        # FastAPI application
+    ├── main.py        # FastAPI application with improved connection handling
     └── templates/     # HTML templates
+        ├── base.html       # Base template with navigation
+        ├── dashboard.html  # Main dashboard
+        ├── coalition.html  # Coalition analysis interface
+        └── vote_flow.html  # Vote flow visualization
 
 sql/               # SQL scripts for data transformation
 ├── 01_load_data.sql      # Load CVR data
@@ -72,7 +77,7 @@ Note: Wide-to-long transformation handled dynamically in Python
 scripts/           # Command-line tools
 ├── process_data.py   # Process CVR data
 ├── run_stv.py       # Run STV tabulation
-├── start_server.py  # Start web server
+├── start_server.py  # Start web server (supports multiple instances)
 └── test_pipeline.py # Test the complete pipeline
 ```
 
@@ -97,6 +102,11 @@ python scripts/start_server.py --db election_data.db --port 8000
 
 # Development mode with auto-reload
 python scripts/start_server.py --db election_data.db --reload
+
+# Multiple instances (now supported without database locks)
+python scripts/start_server.py --db election_data.db --port 8001 &
+python scripts/start_server.py --db election_data.db --port 8002 &
+python scripts/start_server.py --db election_data.db --port 8003 &
 ```
 
 ### Package Management
@@ -120,12 +130,24 @@ isort src/ scripts/
 ## API Endpoints
 
 The web application provides REST API endpoints:
+
+### Core Analysis
 - `GET /api/summary` - Summary statistics
 - `GET /api/candidates` - Candidate list
 - `GET /api/first-choice` - First choice results
 - `GET /api/stv-results` - Run STV tabulation
 - `GET /api/ballot/{ballot_id}` - Individual ballot details
 - `GET /api/export/*` - CSV data exports
+
+### Vote Flow Visualization
+- `GET /api/stv-flow-data` - Complete vote flow data for visualization
+- `GET /api/vote-transfers/round/{round_number}` - Specific round transfers
+
+### Coalition Analysis
+- `GET /api/coalition/pairs/all` - All candidate pairs with detailed analysis
+- `GET /api/coalition/pairs/{id1}/{id2}` - Specific pair comprehensive analysis  
+- `GET /api/coalition/proximity/{id1}/{id2}` - Ranking proximity analysis
+- `GET /api/coalition/types` - Coalition type breakdown and examples
 
 ## File Naming Convention
 
@@ -227,32 +249,64 @@ python scripts/start_server.py --db election_data.db
 - **Sameer Kanal & Michelle DePass**: Strongest overall coalition (0.393 strength, 1.79 avg distance)
 - **Winner Coalition Pattern**: Portland winners show moderate coalition relationships (2.39-2.42 avg distance)
 
-## 📈 **Next Development Phase: Advanced Analytics & Visualization**
+## 🚀 **Phase 3 Complete: Vote Flow Visualization & Database Improvements** ✅
 
-With proximity-weighted coalition analysis complete, focus shifts to remaining high-impact features:
+**Status**: Successfully implemented interactive vote flow visualization with comprehensive database connection improvements
 
-### 🎯 **Priority Features for Next Implementation**
+### ✅ **Major Achievements (August 2025)**
 
-1. **📈 Vote Flow Visualization** - Interactive STV round-by-round vote transfer visualization
-2. **🗺️ Geographic Patterns** - Precinct-level voting pattern analysis and mapping
-3. **📊 Ballot Completion Analysis** - Voter ranking behavior and ballot exhaustion patterns  
-4. **🔮 "What-If" Scenarios** - Counterfactual analysis with candidate elimination simulation
-5. **🎓 Educational STV Explainer** - Interactive tutorial explaining ranked-choice mechanics
+#### **Vote Flow Visualization Engine**
+- **Interactive Sankey Diagrams**: Round-by-round vote transfer visualization using Plotly.js
+- **Detailed Ballot Tracking**: Individual ballot journey tracking through elimination rounds
+- **Transfer Pattern Analysis**: Comprehensive vote movement data with transfer types and weights
+- **Animation Controls**: Play/pause functionality for step-by-step round progression
 
-### 🔧 **Technical Enhancements Available**
-**Note**: See `docs/coalition-analysis-enhancements.md` for detailed technical specifications including:
-- Database optimization with materialized views for proximity queries
-- Batch processing for large datasets  
-- Advanced coalition detection algorithms
-- Caching strategies for performance improvements
-- Additional frontend components and filtering capabilities
+#### **Enhanced Database Architecture**
+- **Connection Pooling**: Automatic connection management with retry logic and exponential backoff
+- **Read-Only Optimization**: Most operations use read-only connections to prevent locking conflicts
+- **Multiple Instance Support**: Can run multiple web servers simultaneously without database locks
+- **Production-Ready Reliability**: Automatic cleanup, error resilience, and resource management
 
-### 🎯 **Current Priority Status**
+#### **New API Endpoints & Web Interface**
+- `GET /api/stv-flow-data` - Complete vote flow data for visualization
+- `GET /api/vote-transfers/round/{round_number}` - Specific round transfer details
+- `GET /vote-flow` - Interactive vote flow visualization page with educational content
+
+#### **Interactive Visualization Features** (`/vote-flow`)
+- **Round Navigation**: View specific rounds or complete flow with interactive controls
+- **Transfer Filtering**: Filter by elimination/surplus transfers and minimum vote thresholds
+- **Educational Components**: Step-by-step STV explanation with round information displays
+- **Real-time Analysis**: Vote totals charts, transfer summaries, and detailed transfer tables
+
+### 📊 **Technical Improvements**
+- **Database Connection Manager**: Centralized pooling with automatic cleanup and retry logic
+- **Enhanced STV Engine**: Detailed tracking mode for comprehensive ballot journey analysis
+- **Performance Optimization**: Read-only connections and temporary connection patterns
+- **Error Resilience**: Graceful handling of connection issues with exponential backoff
+
+### 🎯 **Current Implementation Status**
 1. ✅ **Core STV Implementation** - Complete with PyRankVote integration
 2. ✅ **Results Verification** - 100% winner accuracy achieved  
 3. ✅ **Enhanced Coalition Analysis** - Complete with web interface
-4. 🎯 **Vote Flow Visualization** - Next high-impact feature
-5. 🔄 **Geographic Analysis** - High value for voter education
-6. 🔄 **Educational Tools** - Critical for public understanding
+4. ✅ **Vote Flow Visualization** - Complete with interactive Sankey diagrams
+5. ✅ **Database Architecture** - Production-ready with multiple instance support
 
-**Goal**: Transform from "election calculator" to "election insight engine" that helps voters, candidates, and researchers understand ranked-choice voting patterns.
+## 📈 **Next Development Phase: Advanced Analytics & Geographic Insights**
+
+With vote flow visualization complete, focus shifts to remaining high-impact features:
+
+### 🎯 **Priority Features for Next Implementation**
+
+1. **🗺️ Geographic Patterns** - Precinct-level voting pattern analysis and mapping
+2. **📊 Ballot Completion Analysis** - Voter ranking behavior and ballot exhaustion patterns  
+3. **🔮 "What-If" Scenarios** - Counterfactual analysis with candidate elimination simulation
+4. **🎓 Educational STV Explainer** - Interactive tutorial explaining ranked-choice mechanics
+5. **📈 Advanced Metrics** - Voter preference strength, polarization analysis, and demographic insights
+
+### 🔧 **Available Enhancement Areas**
+- **Performance Optimization**: Materialized views for complex queries
+- **Advanced Visualizations**: 3D flow diagrams, geographic heat maps, timeline analysis
+- **Data Export**: Comprehensive CSV/JSON export capabilities for research
+- **API Documentation**: OpenAPI/Swagger documentation for external integrations
+
+**Current Goal**: Transform from "election insight engine" to "comprehensive civic engagement platform" that helps voters, candidates, researchers, and election officials understand ranked-choice voting at every level.

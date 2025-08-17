@@ -1,6 +1,6 @@
 import pandas as pd
-from typing import Dict, List, Optional
-from dataclasses import dataclass
+from typing import Dict, List, Optional, Tuple
+from dataclasses import dataclass, field
 import logging
 try:
     from ..data.database import CVRDatabase
@@ -24,25 +24,70 @@ class STVRound:
     total_continuing_votes: float
 
 
+@dataclass
+class BallotJourney:
+    """Tracks an individual ballot's progression through STV rounds."""
+    ballot_id: str
+    candidate_progression: List[Tuple[int, int]]  # [(round, candidate_id), ...]
+    transfer_history: List[Tuple[int, int, int, str]]  # [(round, from_candidate, to_candidate, reason), ...]
+    final_status: str  # 'elected', 'eliminated', 'exhausted'
+    weight_progression: List[Tuple[int, float]]  # [(round, weight), ...]
+
+
+@dataclass
+class TransferPattern:
+    """Represents vote transfers between candidates in a specific round."""
+    round_number: int
+    from_candidate: int
+    from_candidate_name: str
+    to_candidate: int
+    to_candidate_name: str
+    votes_transferred: float
+    transfer_type: str  # 'elimination', 'surplus', 'exhausted'
+    transfer_value: float  # weight of each vote transferred
+    ballot_count: int  # number of ballots involved
+
+
+@dataclass
+class VoteFlow:
+    """Complete vote flow data for visualization."""
+    rounds: List[STVRound]
+    transfer_patterns: List[TransferPattern]
+    ballot_journeys: List[BallotJourney]
+    candidate_flow_summary: Dict[int, Dict[str, any]]  # candidate_id -> flow stats
+    flow_metadata: Dict[str, any] = field(default_factory=dict)
+
+
 class STVTabulator:
     """
     Single Transferable Vote tabulation engine.
     Implements multi-winner RCV using the Droop quota.
     """
     
-    def __init__(self, db: CVRDatabase, seats: int = 3):
+    def __init__(self, db: CVRDatabase, seats: int = 3, detailed_tracking: bool = False):
         """
         Initialize STV tabulator.
         
         Args:
             db: Database connection with normalized ballot data
             seats: Number of seats to fill (default 3 for Portland District 2)
+            detailed_tracking: Enable detailed vote flow tracking for visualization
         """
         self.db = db
         self.seats = seats
+        self.detailed_tracking = detailed_tracking
         self.rounds: List[STVRound] = []
         self.winners: List[int] = []
         self.eliminated: List[int] = []
+        
+        # Enhanced tracking for vote flow visualization
+        if self.detailed_tracking:
+            self.transfer_patterns: List[TransferPattern] = []
+            self.ballot_journeys: Dict[str, BallotJourney] = {}
+            self.candidate_names: Dict[int, str] = {}
+            
+        # Use retry queries for better reliability
+        self.use_retry = True
         
     def calculate_droop_quota(self, total_votes: float) -> float:
         """
@@ -58,7 +103,7 @@ class STVTabulator:
         
     def get_initial_vote_counts(self) -> pd.DataFrame:
         """Get first preference vote counts for all candidates."""
-        return self.db.query("""
+        query = """
             SELECT 
                 candidate_id,
                 candidate_name,
@@ -68,7 +113,11 @@ class STVTabulator:
             WHERE rank_position = 1
             GROUP BY candidate_id, candidate_name
             ORDER BY votes DESC
-        """)
+        """
+        if self.use_retry:
+            return self.db.query_with_retry(query)
+        else:
+            return self.db.query(query)
         
     def get_ballot_preferences(self) -> pd.DataFrame:
         """
@@ -131,7 +180,10 @@ class STVTabulator:
             WHERE pref_order = 1  -- Next continuing preference
         """
         
-        transfer_df = self.db.query(ballots_query)
+        if self.use_retry:
+            transfer_df = self.db.query_with_retry(ballots_query)
+        else:
+            transfer_df = self.db.query(ballots_query)
         
         # Count transfers to each candidate
         transfers = {}
@@ -139,6 +191,109 @@ class STVTabulator:
             count = len(transfer_df[transfer_df['candidate_id'] == candidate_id])
             if count > 0:
                 transfers[candidate_id] = count * transfer_value
+                
+        return transfers
+        
+    def calculate_detailed_transfers(self, 
+                                   from_candidate: int, 
+                                   transfer_value: float,
+                                   continuing_candidates: List[int],
+                                   round_number: int,
+                                   transfer_type: str) -> Dict[int, float]:
+        """
+        Calculate detailed vote transfers with ballot journey tracking.
+        
+        Args:
+            from_candidate: Candidate being eliminated or having surplus
+            transfer_value: Value of each vote being transferred
+            continuing_candidates: List of candidates still in the race
+            round_number: Current round number
+            transfer_type: 'elimination' or 'surplus'
+            
+        Returns:
+            Dictionary mapping candidate_id to transferred votes
+        """
+        if not self.detailed_tracking:
+            return self.calculate_transfers(from_candidate, transfer_value, continuing_candidates)
+            
+        # Get all ballots that have the from_candidate at any rank
+        ballots_query = f"""
+            WITH candidate_ballots AS (
+                SELECT DISTINCT BallotID
+                FROM ballots_long
+                WHERE candidate_id = {from_candidate}
+            ),
+            ballot_preferences AS (
+                SELECT 
+                    bl.BallotID,
+                    bl.candidate_id,
+                    bl.rank_position,
+                    ROW_NUMBER() OVER (PARTITION BY bl.BallotID ORDER BY bl.rank_position) as pref_order
+                FROM ballots_long bl
+                WHERE bl.BallotID IN (SELECT BallotID FROM candidate_ballots)
+                  AND bl.candidate_id IN ({','.join(map(str, continuing_candidates))})
+                ORDER BY bl.BallotID, bl.rank_position
+            )
+            SELECT 
+                BallotID,
+                candidate_id,
+                rank_position
+            FROM ballot_preferences
+            WHERE pref_order = 1  -- Next continuing preference
+        """
+        
+        if self.use_retry:
+            transfer_df = self.db.query_with_retry(ballots_query)
+        else:
+            transfer_df = self.db.query(ballots_query)
+        
+        # Count transfers and track ballot journeys
+        transfers = {}
+        from_candidate_name = self.candidate_names.get(from_candidate, f"Candidate-{from_candidate}")
+        
+        for candidate_id in continuing_candidates:
+            candidate_ballots = transfer_df[transfer_df['candidate_id'] == candidate_id]
+            count = len(candidate_ballots)
+            if count > 0:
+                transfers[candidate_id] = count * transfer_value
+                
+                # Track this transfer pattern
+                to_candidate_name = self.candidate_names.get(candidate_id, f"Candidate-{candidate_id}")
+                pattern = TransferPattern(
+                    round_number=round_number,
+                    from_candidate=from_candidate,
+                    from_candidate_name=from_candidate_name,
+                    to_candidate=candidate_id,
+                    to_candidate_name=to_candidate_name,
+                    votes_transferred=count * transfer_value,
+                    transfer_type=transfer_type,
+                    transfer_value=transfer_value,
+                    ballot_count=count
+                )
+                self.transfer_patterns.append(pattern)
+                
+                # Update ballot journeys
+                for _, ballot_row in candidate_ballots.iterrows():
+                    ballot_id = ballot_row['BallotID']
+                    
+                    if ballot_id not in self.ballot_journeys:
+                        self.ballot_journeys[ballot_id] = BallotJourney(
+                            ballot_id=ballot_id,
+                            candidate_progression=[],
+                            transfer_history=[],
+                            final_status='continuing',
+                            weight_progression=[]
+                        )
+                    
+                    journey = self.ballot_journeys[ballot_id]
+                    journey.transfer_history.append((
+                        round_number, 
+                        from_candidate, 
+                        candidate_id, 
+                        transfer_type
+                    ))
+                    journey.candidate_progression.append((round_number, candidate_id))
+                    journey.weight_progression.append((round_number, transfer_value))
                 
         return transfers
         
@@ -155,6 +310,14 @@ class STVTabulator:
         initial_votes = self.get_initial_vote_counts()
         total_votes = initial_votes['votes'].sum()
         quota = self.calculate_droop_quota(total_votes)
+        
+        # Initialize candidate names for detailed tracking
+        if self.detailed_tracking:
+            if self.use_retry:
+                candidates_df = self.db.query_with_retry("SELECT candidate_id, candidate_name FROM candidates")
+            else:
+                candidates_df = self.db.query("SELECT candidate_id, candidate_name FROM candidates")
+            self.candidate_names = dict(zip(candidates_df['candidate_id'], candidates_df['candidate_name']))
         
         logger.info(f"Total first preference votes: {total_votes}")
         logger.info(f"Droop quota: {quota}")
@@ -190,7 +353,12 @@ class STVTabulator:
                     
                     logger.info(f"Transferring surplus from candidate {winner}: {surplus:.1f} votes at value {transfer_value:.3f}")
                     
-                    winner_transfers = self.calculate_transfers(winner, transfer_value, continuing)
+                    if self.detailed_tracking:
+                        winner_transfers = self.calculate_detailed_transfers(
+                            winner, transfer_value, continuing, round_num, 'surplus'
+                        )
+                    else:
+                        winner_transfers = self.calculate_transfers(winner, transfer_value, continuing)
                     transfers[winner] = winner_transfers
                     
                     # Apply transfers
@@ -212,7 +380,12 @@ class STVTabulator:
                 logger.info(f"Eliminating candidate {lowest_candidate} with {vote_totals[lowest_candidate]:.1f} votes")
                 
                 # Transfer eliminated candidate's votes at full value
-                eliminated_transfers = self.calculate_transfers(lowest_candidate, 1.0, continuing)
+                if self.detailed_tracking:
+                    eliminated_transfers = self.calculate_detailed_transfers(
+                        lowest_candidate, 1.0, continuing, round_num, 'elimination'
+                    )
+                else:
+                    eliminated_transfers = self.calculate_transfers(lowest_candidate, 1.0, continuing)
                 transfers[lowest_candidate] = eliminated_transfers
                 
                 # Apply transfers
@@ -315,3 +488,72 @@ class STVTabulator:
             })
             
         return pd.DataFrame(results_data).sort_values('final_votes', ascending=False)
+    
+    def get_vote_flow(self) -> Optional[VoteFlow]:
+        """
+        Get complete vote flow data for visualization.
+        
+        Returns:
+            VoteFlow object if detailed tracking was enabled, None otherwise
+        """
+        if not self.detailed_tracking:
+            logger.warning("Vote flow data not available - detailed tracking was not enabled")
+            return None
+            
+        if not self.rounds:
+            logger.warning("No STV rounds available for vote flow")
+            return None
+            
+        # Generate candidate flow summary
+        candidate_flow_summary = {}
+        for candidate_id, candidate_name in self.candidate_names.items():
+            # Count transfers involving this candidate
+            transfers_from = [p for p in self.transfer_patterns if p.from_candidate == candidate_id]
+            transfers_to = [p for p in self.transfer_patterns if p.to_candidate == candidate_id]
+            
+            total_votes_transferred_out = sum(p.votes_transferred for p in transfers_from)
+            total_votes_transferred_in = sum(p.votes_transferred for p in transfers_to)
+            
+            candidate_flow_summary[candidate_id] = {
+                'candidate_name': candidate_name,
+                'total_votes_out': total_votes_transferred_out,
+                'total_votes_in': total_votes_transferred_in,
+                'transfer_count_out': len(transfers_from),
+                'transfer_count_in': len(transfers_to),
+                'elimination_round': None,
+                'election_round': None,
+                'final_status': 'not_elected'
+            }
+            
+            # Determine final status and round
+            if candidate_id in self.winners:
+                candidate_flow_summary[candidate_id]['final_status'] = 'elected'
+                for round_obj in self.rounds:
+                    if candidate_id in round_obj.winners_this_round:
+                        candidate_flow_summary[candidate_id]['election_round'] = round_obj.round_number
+                        break
+            elif candidate_id in self.eliminated:
+                candidate_flow_summary[candidate_id]['final_status'] = 'eliminated'
+                for round_obj in self.rounds:
+                    if candidate_id in round_obj.eliminated_this_round:
+                        candidate_flow_summary[candidate_id]['elimination_round'] = round_obj.round_number
+                        break
+        
+        # Create metadata
+        flow_metadata = {
+            'total_rounds': len(self.rounds),
+            'total_candidates': len(self.candidate_names),
+            'total_transfers': len(self.transfer_patterns),
+            'total_ballots_tracked': len(self.ballot_journeys),
+            'seats': self.seats,
+            'winners': self.winners,
+            'eliminated': self.eliminated
+        }
+        
+        return VoteFlow(
+            rounds=self.rounds,
+            transfer_patterns=self.transfer_patterns,
+            ballot_journeys=list(self.ballot_journeys.values()),
+            candidate_flow_summary=candidate_flow_summary,
+            flow_metadata=flow_metadata
+        )

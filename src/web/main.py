@@ -25,9 +25,8 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Ranked Elections Analyzer", description="Portland STV Election Analysis Platform")
 
-# Global database connection - in production this should be properly managed
+# Global database path - connections are now managed automatically
 db_path = None
-db = None
 
 # Templates and static files
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
@@ -40,30 +39,43 @@ async def startup_event():
 @app.on_event("shutdown") 
 async def shutdown_event():
     """Clean up on shutdown."""
-    global db
-    if db:
-        db.close()
+    logger.info("Shutting down Ranked Elections Analyzer")
 
 def get_database() -> CVRDatabase:
-    """Get database connection."""
-    global db, db_path
-    if not db and db_path:
-        db = CVRDatabase(db_path)
-    return db
+    """
+    Get database connection using improved connection management.
+    Creates read-only connections by default to avoid locking issues.
+    """
+    global db_path
+    if not db_path:
+        raise HTTPException(status_code=500, detail="Database not configured")
+    return CVRDatabase(db_path, read_only=True)
 
 def set_database_path(path: str):
     """Set the database path for the application."""
-    global db_path, db
+    global db_path
     db_path = path
-    if db:
-        db.close()
-    db = CVRDatabase(db_path)
+    logger.info(f"Database path set to: {path}")
+    
+    # Test connection to ensure database is accessible
+    try:
+        test_db = CVRDatabase(db_path, read_only=True)
+        test_db.table_exists("ballots_long")  # This will use a temporary connection
+        logger.info("Database connection test successful")
+    except Exception as e:
+        logger.error(f"Database connection test failed: {e}")
+        raise
 
 # API Routes
 @app.get("/coalition")
 async def coalition_analysis(request: Request):
     """Coalition analysis page."""
     return templates.TemplateResponse("coalition.html", {"request": request})
+
+@app.get("/vote-flow")
+async def vote_flow_visualization(request: Request):
+    """Vote flow visualization page."""
+    return templates.TemplateResponse("vote_flow.html", {"request": request})
 
 @app.get("/")
 async def root(request: Request):
@@ -96,7 +108,7 @@ async def get_summary():
     if not database or not database.table_exists("ballots_long"):
         raise HTTPException(status_code=400, detail="No data loaded")
     
-    summary = database.query("SELECT * FROM summary_stats")
+    summary = database.query_with_retry("SELECT * FROM summary_stats")
     return summary.to_dict('records')
 
 @app.get("/api/candidates")
@@ -106,7 +118,7 @@ async def get_candidates():
     if not database or not database.table_exists("candidates"):
         raise HTTPException(status_code=400, detail="No data loaded")
     
-    candidates = database.query("SELECT * FROM candidates ORDER BY candidate_name")
+    candidates = database.query_with_retry("SELECT * FROM candidates ORDER BY candidate_name")
     return candidates.to_dict('records')
 
 @app.get("/api/first-choice")
@@ -116,7 +128,7 @@ async def get_first_choice_results():
     if not database or not database.table_exists("ballots_long"):
         raise HTTPException(status_code=400, detail="No data loaded")
     
-    results = database.query("SELECT * FROM first_choice_totals")
+    results = database.query_with_retry("SELECT * FROM first_choice_totals")
     return results.to_dict('records')
 
 @app.get("/api/votes-by-rank")
@@ -196,6 +208,122 @@ async def get_stv_results(seats: int = 3):
     except Exception as e:
         logger.error(f"Error running STV: {e}")
         raise HTTPException(status_code=500, detail=f"STV calculation failed: {str(e)}")
+
+@app.get("/api/stv-flow-data")
+async def get_stv_flow_data(seats: int = 3):
+    """Get complete vote flow data for visualization."""
+    database = get_database()
+    if not database or not database.table_exists("ballots_long"):
+        raise HTTPException(status_code=400, detail="No data loaded")
+    
+    try:
+        # Run STV tabulation with detailed tracking enabled
+        tabulator = STVTabulator(database, seats=seats, detailed_tracking=True)
+        rounds = tabulator.run_stv_tabulation()
+        
+        # Get vote flow data
+        vote_flow = tabulator.get_vote_flow()
+        if not vote_flow:
+            raise HTTPException(status_code=500, detail="Vote flow tracking failed")
+        
+        # Convert to JSON-serializable format
+        flow_data = {
+            "rounds": [
+                {
+                    "round_number": r.round_number,
+                    "continuing_candidates": r.continuing_candidates,
+                    "vote_totals": r.vote_totals,
+                    "quota": r.quota,
+                    "winners_this_round": r.winners_this_round,
+                    "eliminated_this_round": r.eliminated_this_round,
+                    "transfers": r.transfers,
+                    "exhausted_votes": r.exhausted_votes,
+                    "total_continuing_votes": r.total_continuing_votes
+                }
+                for r in vote_flow.rounds
+            ],
+            "transfer_patterns": [
+                {
+                    "round_number": p.round_number,
+                    "from_candidate": p.from_candidate,
+                    "from_candidate_name": p.from_candidate_name,
+                    "to_candidate": p.to_candidate,
+                    "to_candidate_name": p.to_candidate_name,
+                    "votes_transferred": p.votes_transferred,
+                    "transfer_type": p.transfer_type,
+                    "transfer_value": p.transfer_value,
+                    "ballot_count": p.ballot_count
+                }
+                for p in vote_flow.transfer_patterns
+            ],
+            "candidate_flow_summary": vote_flow.candidate_flow_summary,
+            "flow_metadata": vote_flow.flow_metadata
+        }
+        
+        return flow_data
+        
+    except Exception as e:
+        logger.error(f"Error generating vote flow data: {e}")
+        raise HTTPException(status_code=500, detail=f"Vote flow generation failed: {str(e)}")
+
+@app.get("/api/vote-transfers/round/{round_number}")
+async def get_round_transfers(round_number: int, seats: int = 3):
+    """Get vote transfer details for a specific round."""
+    database = get_database()
+    if not database or not database.table_exists("ballots_long"):
+        raise HTTPException(status_code=400, detail="No data loaded")
+    
+    try:
+        # Run STV tabulation with detailed tracking
+        tabulator = STVTabulator(database, seats=seats, detailed_tracking=True)
+        rounds = tabulator.run_stv_tabulation()
+        
+        vote_flow = tabulator.get_vote_flow()
+        if not vote_flow:
+            raise HTTPException(status_code=500, detail="Vote flow tracking failed")
+        
+        # Find transfers for the requested round
+        round_transfers = [
+            {
+                "from_candidate": p.from_candidate,
+                "from_candidate_name": p.from_candidate_name,
+                "to_candidate": p.to_candidate,
+                "to_candidate_name": p.to_candidate_name,
+                "votes_transferred": p.votes_transferred,
+                "transfer_type": p.transfer_type,
+                "transfer_value": p.transfer_value,
+                "ballot_count": p.ballot_count
+            }
+            for p in vote_flow.transfer_patterns
+            if p.round_number == round_number
+        ]
+        
+        if not round_transfers:
+            raise HTTPException(status_code=404, detail=f"No transfers found for round {round_number}")
+        
+        # Get round summary
+        round_info = None
+        for r in vote_flow.rounds:
+            if r.round_number == round_number:
+                round_info = {
+                    "round_number": r.round_number,
+                    "quota": r.quota,
+                    "winners_this_round": r.winners_this_round,
+                    "eliminated_this_round": r.eliminated_this_round,
+                    "exhausted_votes": r.exhausted_votes,
+                    "total_continuing_votes": r.total_continuing_votes
+                }
+                break
+        
+        return {
+            "round_info": round_info,
+            "transfers": round_transfers,
+            "transfer_count": len(round_transfers)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting round transfers: {e}")
+        raise HTTPException(status_code=500, detail=f"Round transfer lookup failed: {str(e)}")
 
 @app.get("/api/candidate-analysis/{candidate_name}")
 async def analyze_candidate(candidate_name: str):

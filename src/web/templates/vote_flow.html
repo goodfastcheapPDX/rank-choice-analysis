@@ -1,0 +1,540 @@
+{% extends "base.html" %}
+
+{% block title %}Vote Flow Visualization - Ranked Elections Analyzer{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>🗳️ STV Vote Flow Visualization</h2>
+    <p>Explore how votes transfer between candidates during ranked-choice elimination rounds in the Portland City Council District 2 election.</p>
+</div>
+
+<!-- Controls -->
+<div class="card">
+    <h2>⚙️ Visualization Controls</h2>
+    <div class="grid">
+        <div class="form-group">
+            <label for="seats-input">Number of Seats:</label>
+            <select id="seats-input">
+                <option value="3" selected>3 (Portland District 2)</option>
+                <option value="1">1 (Single Winner)</option>
+                <option value="2">2</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="current-round">Current Round:</label>
+            <select id="current-round" disabled>
+                <option value="all">All Rounds</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="transfer-filter">Transfer Type:</label>
+            <select id="transfer-filter">
+                <option value="all">All Transfers</option>
+                <option value="elimination">Elimination Only</option>
+                <option value="surplus">Surplus Only</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="min-transfer-votes">Min Transfer Size:</label>
+            <input type="number" id="min-transfer-votes" value="100" min="0" step="100">
+        </div>
+    </div>
+    
+    <div style="margin-top: 1rem;">
+        <button class="btn" id="load-flow-btn" onclick="loadVoteFlow()">Load Vote Flow</button>
+        <button class="btn btn-secondary" id="play-animation-btn" onclick="playAnimation()" disabled>Play Animation</button>
+        <button class="btn btn-secondary" id="reset-view-btn" onclick="resetView()" disabled>Reset View</button>
+    </div>
+</div>
+
+<!-- Loading State -->
+<div class="card" id="loading-state" style="display: none;">
+    <div class="loading">Loading vote flow data... This may take a few moments as we track individual ballot movements.</div>
+</div>
+
+<!-- Main Visualization -->
+<div class="card" id="visualization-container" style="display: none;">
+    <h2>Vote Transfer Flow</h2>
+    <div id="flow-chart"></div>
+    <div id="round-info" class="card" style="margin-top: 1rem; display: none;">
+        <h3>Round Information</h3>
+        <div id="round-details"></div>
+    </div>
+</div>
+
+<!-- Round-by-Round Analysis -->
+<div class="card" id="round-analysis" style="display: none;">
+    <h2>📊 Round-by-Round Analysis</h2>
+    <div class="grid">
+        <div>
+            <h3>Vote Totals by Round</h3>
+            <div id="vote-totals-chart"></div>
+        </div>
+        <div>
+            <h3>Transfer Summary</h3>
+            <div id="transfer-summary-chart"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Transfer Details -->
+<div class="card" id="transfer-details" style="display: none;">
+    <h2>🔄 Transfer Details</h2>
+    <div id="transfer-table-container">
+        <table id="transfer-table">
+            <thead>
+                <tr>
+                    <th>Round</th>
+                    <th>From Candidate</th>
+                    <th>To Candidate</th>
+                    <th>Votes</th>
+                    <th>Type</th>
+                    <th>Transfer Value</th>
+                    <th>Ballots</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Educational Information -->
+<div class="card">
+    <h2>📚 Understanding Vote Flow</h2>
+    <div class="grid">
+        <div>
+            <h3>How STV Works</h3>
+            <ul>
+                <li><strong>Round 1:</strong> Count first-choice votes</li>
+                <li><strong>Quota Check:</strong> Candidates meeting quota are elected</li>
+                <li><strong>Surplus Transfer:</strong> Excess votes transfer to next preferences</li>
+                <li><strong>Elimination:</strong> Lowest candidate eliminated, votes transfer</li>
+                <li><strong>Repeat:</strong> Continue until all seats filled</li>
+            </ul>
+        </div>
+        <div>
+            <h3>Reading the Visualization</h3>
+            <ul>
+                <li><strong>Node Size:</strong> Represents vote total</li>
+                <li><strong>Flow Width:</strong> Number of votes transferred</li>
+                <li><strong>Colors:</strong> Candidate-specific identification</li>
+                <li><strong>Green Flows:</strong> Votes to elected candidates</li>
+                <li><strong>Red Flows:</strong> Votes from eliminated candidates</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Global variables
+let voteFlowData = null;
+let currentAnimationRound = 1;
+let animationTimer = null;
+let candidateColors = {};
+
+// Initialize the page
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-load with default settings
+    loadVoteFlow();
+});
+
+// Load vote flow data
+async function loadVoteFlow() {
+    const seats = document.getElementById('seats-input').value;
+    
+    try {
+        showLoadingState(true);
+        
+        const data = await fetchData(`/api/stv-flow-data?seats=${seats}`);
+        voteFlowData = data;
+        
+        // Initialize UI components
+        initializeRoundSelector();
+        generateCandidateColors();
+        displayVoteFlow();
+        displayRoundAnalysis();
+        displayTransferDetails();
+        
+        // Enable controls
+        document.getElementById('play-animation-btn').disabled = false;
+        document.getElementById('reset-view-btn').disabled = false;
+        document.getElementById('current-round').disabled = false;
+        
+        showLoadingState(false);
+        
+    } catch (error) {
+        showLoadingState(false);
+        showError('visualization-container', `Failed to load vote flow data: ${error.message}`);
+    }
+}
+
+function showLoadingState(loading) {
+    document.getElementById('loading-state').style.display = loading ? 'block' : 'none';
+    document.getElementById('visualization-container').style.display = loading ? 'none' : 'block';
+    document.getElementById('round-analysis').style.display = loading ? 'none' : 'block';
+    document.getElementById('transfer-details').style.display = loading ? 'none' : 'block';
+}
+
+function initializeRoundSelector() {
+    const selector = document.getElementById('current-round');
+    selector.innerHTML = '<option value="all">All Rounds</option>';
+    
+    if (voteFlowData && voteFlowData.rounds) {
+        voteFlowData.rounds.forEach(round => {
+            const option = new Option(`Round ${round.round_number}`, round.round_number);
+            selector.add(option);
+        });
+    }
+}
+
+function generateCandidateColors() {
+    if (!voteFlowData) return;
+    
+    const candidates = Object.keys(voteFlowData.candidate_flow_summary);
+    const colors = [
+        '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', 
+        '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf',
+        '#aec7e8', '#ffbb78', '#98df8a', '#ff9896', '#c5b0d5'
+    ];
+    
+    candidates.forEach((candidateId, index) => {
+        candidateColors[candidateId] = colors[index % colors.length];
+    });
+}
+
+function displayVoteFlow() {
+    if (!voteFlowData) return;
+    
+    const currentRound = document.getElementById('current-round').value;
+    const transferFilter = document.getElementById('transfer-filter').value;
+    const minTransferVotes = parseInt(document.getElementById('min-transfer-votes').value);
+    
+    // Filter transfer patterns
+    let filteredTransfers = voteFlowData.transfer_patterns;
+    
+    if (currentRound !== 'all') {
+        filteredTransfers = filteredTransfers.filter(t => t.round_number == currentRound);
+    }
+    
+    if (transferFilter !== 'all') {
+        filteredTransfers = filteredTransfers.filter(t => t.transfer_type === transferFilter);
+    }
+    
+    filteredTransfers = filteredTransfers.filter(t => t.votes_transferred >= minTransferVotes);
+    
+    // Create Sankey diagram data
+    const sankeyData = createSankeyData(filteredTransfers);
+    
+    const data = [{
+        type: "sankey",
+        orientation: "h",
+        node: {
+            pad: 15,
+            thickness: 20,
+            line: {
+                color: "black",
+                width: 0.5
+            },
+            label: sankeyData.nodeLabels,
+            color: sankeyData.nodeColors
+        },
+        link: {
+            source: sankeyData.sources,
+            target: sankeyData.targets,
+            value: sankeyData.values,
+            color: sankeyData.linkColors,
+            customdata: sankeyData.linkLabels,
+            hovertemplate: '%{customdata}<extra></extra>'
+        }
+    }];
+    
+    const layout = {
+        title: {
+            text: currentRound === 'all' ? 'Complete Vote Flow' : `Round ${currentRound} Vote Transfers`,
+            font: { size: 18 }
+        },
+        font: { size: 12 },
+        height: 600,
+        margin: { l: 50, r: 50, t: 50, b: 50 }
+    };
+    
+    const config = {
+        responsive: true,
+        displayModeBar: true,
+        modeBarButtonsToRemove: ['pan2d', 'lasso2d']
+    };
+    
+    Plotly.newPlot('flow-chart', data, layout, config);
+    
+    // Update round info
+    updateRoundInfo(currentRound);
+}
+
+function createSankeyData(transfers) {
+    const nodeMap = new Map();
+    const links = [];
+    let nodeIndex = 0;
+    
+    // Create nodes for all candidates involved in transfers
+    transfers.forEach(transfer => {
+        const fromKey = `${transfer.from_candidate}_${transfer.round_number}`;
+        const toKey = `${transfer.to_candidate}_${transfer.round_number}`;
+        
+        if (!nodeMap.has(fromKey)) {
+            nodeMap.set(fromKey, {
+                index: nodeIndex++,
+                label: `${transfer.from_candidate_name} (R${transfer.round_number})`,
+                candidateId: transfer.from_candidate,
+                round: transfer.round_number
+            });
+        }
+        
+        if (!nodeMap.has(toKey)) {
+            nodeMap.set(toKey, {
+                index: nodeIndex++,
+                label: `${transfer.to_candidate_name} (R${transfer.round_number})`,
+                candidateId: transfer.to_candidate,
+                round: transfer.round_number
+            });
+        }
+        
+        links.push({
+            source: nodeMap.get(fromKey).index,
+            target: nodeMap.get(toKey).index,
+            value: transfer.votes_transferred,
+            label: `${transfer.from_candidate_name} → ${transfer.to_candidate_name}: ${Math.round(transfer.votes_transferred).toLocaleString()} votes (${transfer.transfer_type})`
+        });
+    });
+    
+    const nodes = Array.from(nodeMap.values());
+    
+    return {
+        nodeLabels: nodes.map(n => n.label),
+        nodeColors: nodes.map(n => candidateColors[n.candidateId] || '#999999'),
+        sources: links.map(l => l.source),
+        targets: links.map(l => l.target),
+        values: links.map(l => l.value),
+        linkColors: links.map(l => candidateColors[nodes[l.source].candidateId] + '40'), // Add transparency
+        linkLabels: links.map(l => l.label)
+    };
+}
+
+function updateRoundInfo(currentRound) {
+    const roundInfoDiv = document.getElementById('round-info');
+    const roundDetailsDiv = document.getElementById('round-details');
+    
+    if (currentRound === 'all') {
+        roundInfoDiv.style.display = 'none';
+        return;
+    }
+    
+    const roundData = voteFlowData.rounds.find(r => r.round_number == currentRound);
+    if (!roundData) {
+        roundInfoDiv.style.display = 'none';
+        return;
+    }
+    
+    let html = `
+        <div class="grid">
+            <div>
+                <p><strong>Round ${roundData.round_number}</strong></p>
+                <p><strong>Quota:</strong> ${roundData.quota.toLocaleString()}</p>
+                <p><strong>Continuing Votes:</strong> ${Math.round(roundData.total_continuing_votes).toLocaleString()}</p>
+                <p><strong>Exhausted Votes:</strong> ${Math.round(roundData.exhausted_votes).toLocaleString()}</p>
+            </div>
+            <div>
+    `;
+    
+    if (roundData.winners_this_round.length > 0) {
+        html += `<p><strong>Elected this round:</strong> ${roundData.winners_this_round.map(id => 
+            voteFlowData.candidate_flow_summary[id]?.candidate_name || `ID-${id}`
+        ).join(', ')}</p>`;
+    }
+    
+    if (roundData.eliminated_this_round.length > 0) {
+        html += `<p><strong>Eliminated this round:</strong> ${roundData.eliminated_this_round.map(id => 
+            voteFlowData.candidate_flow_summary[id]?.candidate_name || `ID-${id}`
+        ).join(', ')}</p>`;
+    }
+    
+    html += '</div></div>';
+    
+    roundDetailsDiv.innerHTML = html;
+    roundInfoDiv.style.display = 'block';
+}
+
+function displayRoundAnalysis() {
+    if (!voteFlowData) return;
+    
+    // Vote totals by round chart
+    const rounds = voteFlowData.rounds;
+    const candidateIds = Object.keys(voteFlowData.candidate_flow_summary);
+    
+    const traces = candidateIds.slice(0, 10).map(candidateId => {
+        const candidateName = voteFlowData.candidate_flow_summary[candidateId].candidate_name;
+        
+        return {
+            x: rounds.map(r => r.round_number),
+            y: rounds.map(r => r.vote_totals[candidateId] || 0),
+            name: candidateName,
+            type: 'scatter',
+            mode: 'lines+markers',
+            line: { color: candidateColors[candidateId] }
+        };
+    });
+    
+    const layout1 = {
+        title: 'Vote Totals by Round (Top 10 Candidates)',
+        xaxis: { title: 'Round' },
+        yaxis: { title: 'Votes' },
+        height: 400
+    };
+    
+    Plotly.newPlot('vote-totals-chart', traces, layout1, { responsive: true });
+    
+    // Transfer summary chart
+    const transfersByRound = {};
+    voteFlowData.transfer_patterns.forEach(transfer => {
+        const round = transfer.round_number;
+        if (!transfersByRound[round]) {
+            transfersByRound[round] = { elimination: 0, surplus: 0 };
+        }
+        transfersByRound[round][transfer.transfer_type] += transfer.votes_transferred;
+    });
+    
+    const eliminationTrace = {
+        x: Object.keys(transfersByRound),
+        y: Object.values(transfersByRound).map(r => r.elimination),
+        name: 'Elimination Transfers',
+        type: 'bar',
+        marker: { color: '#e74c3c' }
+    };
+    
+    const surplusTrace = {
+        x: Object.keys(transfersByRound),
+        y: Object.values(transfersByRound).map(r => r.surplus),
+        name: 'Surplus Transfers',
+        type: 'bar',
+        marker: { color: '#27ae60' }
+    };
+    
+    const layout2 = {
+        title: 'Vote Transfers by Round',
+        xaxis: { title: 'Round' },
+        yaxis: { title: 'Votes Transferred' },
+        barmode: 'stack',
+        height: 400
+    };
+    
+    Plotly.newPlot('transfer-summary-chart', [eliminationTrace, surplusTrace], layout2, { responsive: true });
+}
+
+function displayTransferDetails() {
+    if (!voteFlowData) return;
+    
+    const tbody = document.querySelector('#transfer-table tbody');
+    tbody.innerHTML = voteFlowData.transfer_patterns
+        .sort((a, b) => a.round_number - b.round_number || b.votes_transferred - a.votes_transferred)
+        .map(transfer => `
+            <tr>
+                <td>${transfer.round_number}</td>
+                <td><strong>${transfer.from_candidate_name}</strong></td>
+                <td><strong>${transfer.to_candidate_name}</strong></td>
+                <td>${Math.round(transfer.votes_transferred).toLocaleString()}</td>
+                <td><span class="transfer-type-${transfer.transfer_type}">${transfer.transfer_type}</span></td>
+                <td>${transfer.transfer_value.toFixed(3)}</td>
+                <td>${transfer.ballot_count.toLocaleString()}</td>
+            </tr>
+        `).join('');
+}
+
+function playAnimation() {
+    if (!voteFlowData) return;
+    
+    const totalRounds = voteFlowData.rounds.length;
+    currentAnimationRound = 1;
+    
+    // Disable controls during animation
+    document.getElementById('play-animation-btn').disabled = true;
+    
+    animationTimer = setInterval(() => {
+        document.getElementById('current-round').value = currentAnimationRound;
+        displayVoteFlow();
+        
+        currentAnimationRound++;
+        if (currentAnimationRound > totalRounds) {
+            clearInterval(animationTimer);
+            document.getElementById('play-animation-btn').disabled = false;
+            document.getElementById('current-round').value = 'all';
+            displayVoteFlow();
+        }
+    }, 2000); // 2 seconds per round
+}
+
+function resetView() {
+    // Clear any running animation
+    if (animationTimer) {
+        clearInterval(animationTimer);
+        animationTimer = null;
+    }
+    
+    // Reset controls
+    document.getElementById('current-round').value = 'all';
+    document.getElementById('transfer-filter').value = 'all';
+    document.getElementById('min-transfer-votes').value = 100;
+    document.getElementById('play-animation-btn').disabled = false;
+    
+    // Refresh display
+    displayVoteFlow();
+}
+
+// Event listeners for interactive controls
+document.getElementById('current-round').addEventListener('change', displayVoteFlow);
+document.getElementById('transfer-filter').addEventListener('change', displayVoteFlow);
+document.getElementById('min-transfer-votes').addEventListener('input', displayVoteFlow);
+</script>
+
+<style>
+.transfer-type-elimination {
+    background: #e74c3c;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.85em;
+}
+
+.transfer-type-surplus {
+    background: #27ae60;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.85em;
+}
+
+#transfer-table th, #transfer-table td {
+    font-size: 0.9em;
+    padding: 0.5rem;
+}
+
+#flow-chart {
+    min-height: 600px;
+}
+
+.grid input, .grid select {
+    font-size: 0.9rem;
+    padding: 0.5rem;
+}
+
+.loading {
+    text-align: center;
+    padding: 3rem;
+    font-size: 1.1rem;
+    color: #7f8c8d;
+}
+</style>
+{% endblock %}
