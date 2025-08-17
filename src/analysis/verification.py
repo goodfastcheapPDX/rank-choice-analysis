@@ -1,6 +1,5 @@
 import pandas as pd
-import numpy as np
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Optional
 import logging
 from pathlib import Path
 import re

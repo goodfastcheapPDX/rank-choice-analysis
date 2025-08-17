@@ -1,6 +1,5 @@
 import pandas as pd
-import numpy as np
-from typing import Dict, List, Tuple, Optional, NamedTuple
+from typing import Dict, List, Optional
 from dataclasses import dataclass
 import logging
 try:
@@ -102,6 +101,10 @@ class STVTabulator:
         Returns:
             Dictionary mapping candidate_id to transferred votes
         """
+        # If no continuing candidates, return empty transfers
+        if not continuing_candidates:
+            return {}
+            
         # Get all ballots that have the from_candidate at any rank
         ballots_query = f"""
             WITH candidate_ballots AS (
