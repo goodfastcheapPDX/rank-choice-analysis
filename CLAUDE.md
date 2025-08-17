@@ -149,6 +149,48 @@ The web application provides REST API endpoints:
 - `GET /api/coalition/proximity/{id1}/{id2}` - Ranking proximity analysis
 - `GET /api/coalition/types` - Coalition type breakdown and examples
 
+## Web Application Navigation
+
+The web application includes several navigation items with specific intended functionality:
+
+### ✅ **Implemented Pages**
+- **Dashboard** (`/`) - Working main page with summary stats and quick actions
+- **Vote Flow** (`/vote-flow`) - Complete interactive STV vote transfer visualization
+- **Coalition Analysis** (`/coalition`) - Comprehensive candidate coalition analysis
+
+### 🚧 **Navigation Items To Be Implemented**
+
+#### **Candidates Page** (`/candidates`)
+**Purpose**: Candidate-centered exploration for users who want comprehensive information about specific candidates
+**Intended Features**:
+- Individual candidate profiles with detailed statistics
+- Vote progression analysis across all rounds
+- Coalition partners and opposition patterns  
+- Supporter demographics and voting patterns
+- Transfer flow visualization focused on single candidate
+- Comparison tools between candidates
+- "Everything about your favorite candidate" approach
+
+#### **Ballot Explorer** (`/ballots`)
+**Purpose**: Individual ballot examination and pattern discovery
+**Intended Features**:
+- Search ballots by candidate preferences
+- Ballot completion pattern analysis
+- Individual ballot journey visualization through STV rounds
+- Ballot similarity clustering and grouping
+- Export capabilities for research purposes
+- Educational examples of different voting patterns
+
+#### **STV Results** (`/stv-results`)
+**Purpose**: Comprehensive STV tabulation results and analysis
+**Intended Features**:
+- Detailed round-by-round results table
+- Winner analysis with quota achievement visualization
+- Elimination order and reasoning
+- Counterfactual "what-if" scenario analysis
+- Export detailed results for verification
+- Comparison with other STV implementations
+
 ## File Naming Convention
 
 Election data files follow pattern: `[Election_Description]_[Date].cvr.csv` or similar variations with sample indicators.
@@ -291,22 +333,65 @@ python scripts/start_server.py --db election_data.db
 4. ✅ **Vote Flow Visualization** - Complete with interactive Sankey diagrams
 5. ✅ **Database Architecture** - Production-ready with multiple instance support
 
-## 📈 **Next Development Phase: Advanced Analytics & Geographic Insights**
+## 📈 **Next Development Phase: Candidate-Centered Analytics & Advanced Metrics**
 
-With vote flow visualization complete, focus shifts to remaining high-impact features:
+With vote flow visualization complete, focus shifts to user-centered exploration and advanced analytical capabilities:
 
-### 🎯 **Priority Features for Next Implementation**
+### 🎯 **Phase 4 Priority Implementation Order**
 
-1. **🗺️ Geographic Patterns** - Precinct-level voting pattern analysis and mapping
-2. **📊 Ballot Completion Analysis** - Voter ranking behavior and ballot exhaustion patterns  
-3. **🔮 "What-If" Scenarios** - Counterfactual analysis with candidate elimination simulation
-4. **🎓 Educational STV Explainer** - Interactive tutorial explaining ranked-choice mechanics
-5. **📈 Advanced Metrics** - Voter preference strength, polarization analysis, and demographic insights
+#### **Next Up: Advanced Metrics & Analytics**
+1. **📊 Advanced Metrics** - Voter preference strength, polarization analysis, cross-candidate correlations
+   - **Preference Strength Analysis**: How strongly voters prefer certain candidates over others
+   - **Polarization Metrics**: Identification of voter camps and cross-over appeal
+   - **Correlation Analysis**: Which candidates attract similar vs different voter bases
+   - **Transfer Efficiency**: How effectively votes transfer between allied candidates
+   - **Voter Behavior Patterns**: Ranking consistency, bullet voting, exhausted ballot analysis
+   
+2. **👤 Candidate-Centered Exploration** - Comprehensive "everything about your candidate" interface
+   - **Individual Candidate Deep Dives**: Complete statistical profiles
+   - **Supporter Analysis**: Who ranks this candidate and where
+   - **Coalition Mapping**: Natural allies and opponents based on voter behavior
+   - **Transfer Flow Focus**: Where this candidate's votes come from/go to
+   - **Comparative Analysis**: Head-to-head comparisons with other candidates
+   
+3. **🔍 Enhanced Coalition Analysis** - Deeper coalition insights and relationship mapping
+   - **Coalition Strength Refinement**: More sophisticated strength calculations
+   - **Temporal Coalition Analysis**: How coalitions change across elimination rounds
+   - **Coalition Visualization**: Network graphs of candidate relationships
+   - **Strategic Coalition Detection**: Identifying tactical vs natural alliances
+   
+4. **🛠️ Hardening & UX Improvements** - Production readiness and user experience optimization
+   - **Performance Optimization**: Faster query execution and caching
+   - **Error Handling**: Robust error states and user feedback
+   - **Mobile Responsiveness**: Improved mobile experience
+   - **Accessibility**: Screen reader support and keyboard navigation
 
-### 🔧 **Available Enhancement Areas**
-- **Performance Optimization**: Materialized views for complex queries
-- **Advanced Visualizations**: 3D flow diagrams, geographic heat maps, timeline analysis
-- **Data Export**: Comprehensive CSV/JSON export capabilities for research
-- **API Documentation**: OpenAPI/Swagger documentation for external integrations
+#### **Navigation Pages Implementation**
+1. **`/candidates`** - Individual candidate deep-dive analysis (high priority)
+2. **`/stv-results`** - Comprehensive STV results with counterfactual analysis (medium priority)  
+3. **`/ballots`** - Individual ballot exploration and pattern discovery (medium priority)
 
-**Current Goal**: Transform from "election insight engine" to "comprehensive civic engagement platform" that helps voters, candidates, researchers, and election officials understand ranked-choice voting at every level.
+### 🔮 **"What-If" Scenarios: UX Design Required**
+The counterfactual analysis feature needs careful UX design to ensure intuitive user experience:
+- **Interface Design**: How users specify scenario modifications
+- **Result Presentation**: Clear comparison between actual vs hypothetical outcomes
+- **Educational Value**: Ensuring scenarios help users understand STV mechanics
+- **Performance**: Real-time recalculation vs pre-computed scenarios
+
+### 🔄 **Deferred to Later Phases**
+
+#### **Geographic Analysis** (Phase 5+)
+- Requires new data discovery for precinct mapping
+- Precinct boundary data source needs identification
+- High complexity, moderate immediate value
+
+#### **Ballot Completion Analysis** (Phase 5+)  
+- Lower priority for current use case
+- Can be integrated into ballot explorer when implemented
+
+#### **Educational STV Explainer** (Phase 5+)
+- May not be needed if good external resources exist
+- Only implement if specifically designed as application tutorial
+
+### 🎯 **Current Goal**
+Transform from "election insight engine" to "comprehensive candidate-centered analytics platform" that enables deep exploration of individual candidates, advanced metrics analysis, and sophisticated coalition understanding for researchers, candidates, and engaged voters.
