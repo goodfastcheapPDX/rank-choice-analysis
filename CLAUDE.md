@@ -237,10 +237,27 @@ python scripts/start_server.py --db election_data.db
    - Features: Handles whitespace, case, parentheses, and hyphen variations
    - Commit: "Add candidate name normalization for verification"
 
-#### **Priority 3: OSS STV Library Evaluation** (FUTURE)
-- Research: Compare OpenRCV and PyRankVote against current implementation
-- Goal: Validate current algorithm or migrate to proven OSS solution
-- Note: Will break down into specific subtasks when reached
+#### **Priority 3: OSS STV Library Migration** ⏳ ACTIVE
+**Goal**: Replace hand-coded STV implementation with PyRankVote library
+
+**Library Selection**: PyRankVote (OpenRCV not recommended - stalled since 2014)
+
+**Implementation Phases**:
+1. **✅ Unit Testing Infrastructure** (COMPLETED)
+   - ✅ Created comprehensive test suite for current STV implementation
+   - ✅ Built interface compatibility tests for API validation
+   - ✅ 13/16 tests passing - excellent foundation for migration
+   - Commit: "Create comprehensive STV test infrastructure"
+
+2. **Library Integration** - Install PyRankVote and create data adapter module  
+3. **Interface Compatibility** - Maintain existing API while using PyRankVote backend
+4. **Automated Validation** - Side-by-side comparison testing with official results
+5. **Integration & Deployment** - Configuration options and gradual migration
+6. **Migration & Cleanup** - Switch defaults and optional cleanup
+
+**Key Benefits**: Proven STV algorithm, reduced maintenance burden, industry standards
+**Risk Mitigation**: Extensive testing, parallel implementations, configuration fallback
+**Test Coverage**: Quota calculations, elections, transfers, edge cases, API compatibility
 
 **Working Protocol:**
 - Complete each task individually with git commits
