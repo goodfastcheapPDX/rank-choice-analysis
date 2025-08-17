@@ -214,23 +214,28 @@ python scripts/start_server.py --db election_data.db
 
 **Current Sprint: Data Alignment & Parser Fixes**
 
-#### **Priority 1: Data Alignment Issues** ✅ In Progress
+#### **Priority 1: Data Alignment Issues** ✅ COMPLETED
 1. **✅ Include Write-in Candidates** (COMPLETED)
    - Fixed: Modified `02_create_metadata.sql` to include write-in choices
    - Expected: Reduce total vote difference from 1,485 to ~1,274
    - Commit: "Include write-in candidates in metadata extraction"
 
-2. **Ballot Universe Verification** (PENDING)
-   - Task: Investigate `Status` and `Remade` columns in CVR data for proper filtering
+2. **✅ Ballot Universe Verification** (COMPLETED)
+   - Fixed: Added `Status = 0` filter to exclude remade ballots from analysis
+   - Expected: Reduce ballot universe from 77,511 to ~73,916 ballots
    - Goal: Resolve threshold calculation discrepancy (19,729 vs 19,290)
+   - Commit: "Fix ballot filtering to match official count"
 
-#### **Priority 2: Official Results Parser** (PENDING)
-1. **Winner Extraction Bug**
-   - Issue: Parser returns empty `Official winners: []`
-   - Target: `_parse_results_data()` method in `src/analysis/verification.py` ~line 45
+#### **Priority 2: Official Results Parser** ✅ COMPLETED
+1. **✅ Winner Extraction Bug** (COMPLETED)
+   - Fixed: Improved CSV parsing in `_parse_results_data()` method
+   - Result: Should now correctly extract winners from "Met threshold for election" line
+   - Commit: "Fix official results winner extraction parsing"
 
-2. **Candidate Name Normalization**
-   - Task: Basic string cleaning/normalization for robust matching
+2. **✅ Candidate Name Normalization** (COMPLETED)
+   - Fixed: Added `normalize_candidate_name()` function with robust matching
+   - Features: Handles whitespace, case, parentheses, and hyphen variations
+   - Commit: "Add candidate name normalization for verification"
 
 #### **Priority 3: OSS STV Library Evaluation** (FUTURE)
 - Research: Compare OpenRCV and PyRankVote against current implementation
@@ -241,3 +246,10 @@ python scripts/start_server.py --db election_data.db
 - Complete each task individually with git commits
 - Run verification tests after each task  
 - Update this plan as progress is made
+
+#### **Next Steps: Testing & Validation**
+Now that all Priority 1 & 2 fixes are complete:
+1. **Reprocess data** with new filtering and metadata inclusion
+2. **Run verification** to test improvements
+3. **Evaluate results** and determine if Priority 3 (OSS libraries) is needed
+4. **Document findings** and plan next development phase
