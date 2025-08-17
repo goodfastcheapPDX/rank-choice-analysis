@@ -91,15 +91,17 @@ class OfficialResultsParser:
         
         # Extract winners
         if winners_line:
-            winner_parts = winners_line.split(",,")
-            for part in winner_parts:
-                if part.strip() and "Met threshold" not in part:
+            # Split by commas and look for winner names
+            parts = winners_line.split(",")
+            for part in parts:
+                part = part.strip()
+                if part and "Met threshold" not in part and part not in ["", ",,", ","]:
                     # Handle multiple winners in same cell (e.g., "Dan Ryan; Elana Pirtle-Guiney")
                     if ";" in part:
                         names = [name.strip() for name in part.split(";")]
                         self.winners.extend(names)
                     else:
-                        self.winners.append(part.strip())
+                        self.winners.append(part)
         
         # Parse candidate data
         candidate_data = []
