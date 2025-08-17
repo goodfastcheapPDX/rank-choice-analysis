@@ -13,11 +13,13 @@ try:
     from ..data.cvr_parser import CVRParser
     from ..analysis.stv import STVTabulator
     from ..analysis.verification import ResultsVerifier
+    from ..analysis.coalition import CoalitionAnalyzer, convert_numpy_types
 except ImportError:
     from data.database import CVRDatabase
     from data.cvr_parser import CVRParser
     from analysis.stv import STVTabulator
     from analysis.verification import ResultsVerifier
+    from analysis.coalition import CoalitionAnalyzer, convert_numpy_types
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +60,11 @@ def set_database_path(path: str):
     db = CVRDatabase(db_path)
 
 # API Routes
+@app.get("/coalition")
+async def coalition_analysis(request: Request):
+    """Coalition analysis page."""
+    return templates.TemplateResponse("coalition.html", {"request": request})
+
 @app.get("/")
 async def root(request: Request):
     """Main dashboard page."""
@@ -313,6 +320,285 @@ async def verify_results(official_results_path: str = "2024-12-02_15-04-45_repor
     except Exception as e:
         logger.error(f"Error during verification: {e}")
         raise HTTPException(status_code=500, detail=f"Verification failed: {str(e)}")
+
+@app.get("/api/coalition/affinities")
+async def get_candidate_affinities(min_shared_ballots: int = 1000):
+    """Get candidate affinity analysis showing which candidates have overlapping supporter bases."""
+    database = get_database()
+    if not database or not database.table_exists("ballots_long"):
+        raise HTTPException(status_code=400, detail="No data loaded")
+    
+    try:
+        analyzer = CoalitionAnalyzer(database)
+        affinities = analyzer.calculate_pairwise_affinity(min_shared_ballots=min_shared_ballots)
+        
+        # Convert to JSON-serializable format
+        result = []
+        for affinity in affinities:
+            result.append({
+                "candidate_1": affinity.candidate_1,
+                "candidate_1_name": affinity.candidate_1_name,
+                "candidate_2": affinity.candidate_2,
+                "candidate_2_name": affinity.candidate_2_name,
+                "shared_ballots": affinity.shared_ballots,
+                "total_ballots_1": affinity.total_ballots_1,
+                "total_ballots_2": affinity.total_ballots_2,
+                "affinity_score": round(affinity.affinity_score, 4),
+                "overlap_percentage": round(affinity.overlap_percentage, 2)
+            })
+        
+        return {"affinities": result, "count": len(result)}
+    except Exception as e:
+        logger.error(f"Coalition affinity analysis failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+@app.get("/api/coalition/transfers/{candidate_id}")
+async def get_vote_transfers(candidate_id: int):
+    """Get vote transfer patterns for a specific candidate - where their supporters' votes would go."""
+    database = get_database()
+    if not database or not database.table_exists("ballots_long"):
+        raise HTTPException(status_code=400, detail="No data loaded")
+    
+    try:
+        analyzer = CoalitionAnalyzer(database)
+        transfers = analyzer.find_vote_transfer_patterns(candidate_id)
+        
+        # Get candidate name
+        candidate_query = database.query(f"SELECT candidate_name FROM candidates WHERE candidate_id = {candidate_id}")
+        if candidate_query.empty:
+            raise HTTPException(status_code=404, detail="Candidate not found")
+        
+        candidate_name = candidate_query.iloc[0]['candidate_name']
+        
+        # Convert to list format
+        transfer_list = []
+        for cand_id, info in transfers.items():
+            transfer_list.append({
+                "candidate_id": cand_id,
+                "candidate_name": info['candidate_name'],
+                "transfer_votes": info['transfer_votes'],
+                "avg_rank_position": info['avg_rank_position'],
+                "transfer_percentage": round(info['transfer_percentage'], 2)
+            })
+        
+        # Sort by transfer votes descending
+        transfer_list.sort(key=lambda x: x['transfer_votes'], reverse=True)
+        
+        return {
+            "from_candidate_id": candidate_id,
+            "from_candidate_name": candidate_name,
+            "transfers": transfer_list,
+            "total_transfers": sum(t['transfer_votes'] for t in transfer_list)
+        }
+    except Exception as e:
+        logger.error(f"Vote transfer analysis failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+@app.get("/api/coalition/summary/{candidate_id}")
+async def get_candidate_coalition_summary(candidate_id: int):
+    """Get comprehensive coalition analysis for a specific candidate."""
+    database = get_database()
+    if not database or not database.table_exists("ballots_long"):
+        raise HTTPException(status_code=400, detail="No data loaded")
+    
+    try:
+        analyzer = CoalitionAnalyzer(database)
+        summary = analyzer.get_candidate_coalition_summary(candidate_id)
+        
+        if "error" in summary:
+            raise HTTPException(status_code=404, detail=summary["error"])
+        
+        # Convert affinities to JSON-serializable format
+        affinities_json = []
+        for affinity in summary["top_affinities"]:
+            affinities_json.append({
+                "candidate_1": affinity.candidate_1,
+                "candidate_1_name": affinity.candidate_1_name,
+                "candidate_2": affinity.candidate_2,
+                "candidate_2_name": affinity.candidate_2_name,
+                "shared_ballots": affinity.shared_ballots,
+                "affinity_score": round(affinity.affinity_score, 4),
+                "overlap_percentage": round(affinity.overlap_percentage, 2)
+            })
+        
+        return {
+            "candidate_id": summary["candidate_id"],
+            "candidate_name": summary["candidate_name"],
+            "total_ballots": summary["total_ballots"],
+            "top_affinities": affinities_json,
+            "vote_transfers": summary["vote_transfers"],
+            "coalition_strength": summary["coalition_strength"]
+        }
+    except Exception as e:
+        logger.error(f"Coalition summary failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+@app.get("/api/coalition/winners")
+async def get_winner_coalition_analysis():
+    """Get coalition analysis specifically for the three winning candidates."""
+    database = get_database()
+    if not database or not database.table_exists("ballots_long"):
+        raise HTTPException(status_code=400, detail="No data loaded")
+    
+    try:
+        # Portland District 2 winners: Sameer Kanal (36), Elana Pirtle-Guiney (46), Dan Ryan (55)
+        winners = [36, 46, 55]
+        
+        analyzer = CoalitionAnalyzer(database)
+        
+        winner_analysis = {}
+        for winner_id in winners:
+            summary = analyzer.get_candidate_coalition_summary(winner_id)
+            if "error" not in summary:
+                # Simplified format for winners overview
+                winner_analysis[str(winner_id)] = {
+                    "candidate_id": int(winner_id),
+                    "candidate_name": summary["candidate_name"],
+                    "total_ballots": int(summary["total_ballots"]),
+                    "top_3_affinities": [
+                        {
+                            "other_candidate": (affinity.candidate_2_name if affinity.candidate_1 == winner_id 
+                                              else affinity.candidate_1_name),
+                            "shared_ballots": int(affinity.shared_ballots),
+                            "affinity_score": round(float(affinity.affinity_score), 4)
+                        }
+                        for affinity in summary["top_affinities"][:3]
+                    ],
+                    "top_3_transfers": [
+                        {
+                            "to_candidate": info['candidate_name'],
+                            "transfer_votes": info['transfer_votes'],
+                            "transfer_percentage": round(info['transfer_percentage'], 2)
+                        }
+                        for info in list(summary["vote_transfers"].values())[:3]
+                    ]
+                }
+        
+        return {"winner_coalitions": winner_analysis}
+    except Exception as e:
+        logger.error(f"Winner coalition analysis failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+@app.get("/api/coalition/pairs/all")
+async def get_all_candidate_pairs_analysis(min_shared_ballots: int = 50):
+    """Get detailed analysis for all candidate pairs meeting minimum threshold."""
+    database = get_database()
+    if not database or not database.table_exists("ballots_long"):
+        raise HTTPException(status_code=400, detail="No data loaded")
+    
+    try:
+        analyzer = CoalitionAnalyzer(database)
+        detailed_pairs = analyzer.calculate_detailed_pairwise_analysis(min_shared_ballots=min_shared_ballots)
+        
+        # Convert to JSON-serializable format
+        result = []
+        for pair in detailed_pairs:
+            result.append({
+                "candidate_1": pair.candidate_1,
+                "candidate_1_name": pair.candidate_1_name,
+                "candidate_2": pair.candidate_2,
+                "candidate_2_name": pair.candidate_2_name,
+                "shared_ballots": pair.shared_ballots,
+                "total_ballots_1": pair.total_ballots_1,
+                "total_ballots_2": pair.total_ballots_2,
+                "avg_ranking_distance": round(pair.avg_ranking_distance, 2),
+                "min_ranking_distance": pair.min_ranking_distance,
+                "max_ranking_distance": pair.max_ranking_distance,
+                "strong_coalition_votes": pair.strong_coalition_votes,
+                "weak_coalition_votes": pair.weak_coalition_votes,
+                "transfer_votes_1_to_2": pair.transfer_votes_1_to_2,
+                "transfer_votes_2_to_1": pair.transfer_votes_2_to_1,
+                "basic_affinity_score": round(pair.basic_affinity_score, 4),
+                "proximity_weighted_affinity": round(pair.proximity_weighted_affinity, 4),
+                "coalition_strength_score": round(pair.coalition_strength_score, 4),
+                "coalition_type": pair.coalition_type
+            })
+        
+        final_result = {"detailed_pairs": result, "count": len(result)}
+        return convert_numpy_types(final_result)
+    except Exception as e:
+        logger.error(f"Detailed pairs analysis failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+@app.get("/api/coalition/pairs/{candidate_1_id}/{candidate_2_id}")
+async def get_detailed_pair_analysis(candidate_1_id: int, candidate_2_id: int):
+    """Get comprehensive analysis of a specific candidate pair."""
+    database = get_database()
+    if not database or not database.table_exists("ballots_long"):
+        raise HTTPException(status_code=400, detail="No data loaded")
+    
+    try:
+        analyzer = CoalitionAnalyzer(database)
+        pair = analyzer.get_detailed_pair_analysis(candidate_1_id, candidate_2_id)
+        
+        if not pair:
+            raise HTTPException(status_code=404, detail="Candidate pair not found or insufficient data")
+        
+        # Also get proximity analysis
+        proximity = analyzer.analyze_ranking_proximity(candidate_1_id, candidate_2_id)
+        
+        result = {
+            "pair_analysis": {
+                "candidate_1": pair.candidate_1,
+                "candidate_1_name": pair.candidate_1_name,
+                "candidate_2": pair.candidate_2,
+                "candidate_2_name": pair.candidate_2_name,
+                "shared_ballots": pair.shared_ballots,
+                "total_ballots_1": pair.total_ballots_1,
+                "total_ballots_2": pair.total_ballots_2,
+                "avg_ranking_distance": round(pair.avg_ranking_distance, 2),
+                "min_ranking_distance": pair.min_ranking_distance,
+                "max_ranking_distance": pair.max_ranking_distance,
+                "strong_coalition_votes": pair.strong_coalition_votes,
+                "weak_coalition_votes": pair.weak_coalition_votes,
+                "transfer_votes_1_to_2": pair.transfer_votes_1_to_2,
+                "transfer_votes_2_to_1": pair.transfer_votes_2_to_1,
+                "basic_affinity_score": round(pair.basic_affinity_score, 4),
+                "proximity_weighted_affinity": round(pair.proximity_weighted_affinity, 4),
+                "coalition_strength_score": round(pair.coalition_strength_score, 4),
+                "coalition_type": pair.coalition_type
+            },
+            "proximity_analysis": proximity
+        }
+        return convert_numpy_types(result)
+    except Exception as e:
+        logger.error(f"Detailed pair analysis failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+@app.get("/api/coalition/proximity/{candidate_1_id}/{candidate_2_id}")
+async def get_proximity_analysis(candidate_1_id: int, candidate_2_id: int):
+    """Get ranking proximity analysis for a specific candidate pair."""
+    database = get_database()
+    if not database or not database.table_exists("ballots_long"):
+        raise HTTPException(status_code=400, detail="No data loaded")
+    
+    try:
+        analyzer = CoalitionAnalyzer(database)
+        proximity = analyzer.analyze_ranking_proximity(candidate_1_id, candidate_2_id)
+        
+        if "error" in proximity:
+            raise HTTPException(status_code=404, detail=proximity["error"])
+        
+        return proximity
+    except Exception as e:
+        logger.error(f"Proximity analysis failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+@app.get("/api/coalition/types")
+async def get_coalition_type_breakdown():
+    """Get breakdown of different coalition types across all pairs."""
+    database = get_database()
+    if not database or not database.table_exists("ballots_long"):
+        raise HTTPException(status_code=400, detail="No data loaded")
+    
+    try:
+        analyzer = CoalitionAnalyzer(database)
+        breakdown = analyzer.get_coalition_type_breakdown()
+        
+        return breakdown
+    except Exception as e:
+        logger.error(f"Coalition type breakdown failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

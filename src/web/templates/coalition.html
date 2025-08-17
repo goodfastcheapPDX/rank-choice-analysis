@@ -1,0 +1,422 @@
+{% extends "base.html" %}
+
+{% block title %}Coalition Analysis - Ranked Elections Analyzer{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>🤝 Coalition Analysis Dashboard</h2>
+    <p>Explore candidate coalitions, voter preferences, and ranking proximity patterns in the Portland City Council District 2 election.</p>
+</div>
+
+<!-- Coalition Type Overview -->
+<div class="card">
+    <h2>Coalition Type Distribution</h2>
+    <div id="coalition-type-loading" class="loading">Loading coalition type breakdown...</div>
+    <div id="coalition-type-content" style="display: none;">
+        <div id="coalition-type-chart"></div>
+        <div id="coalition-type-stats" class="grid"></div>
+        <div id="coalition-type-examples"></div>
+    </div>
+</div>
+
+<!-- Top Coalition Pairs -->
+<div class="card">
+    <h2>Strongest Coalition Pairs</h2>
+    <p>Candidate pairs ranked by coalition strength (combination of affinity and ranking proximity)</p>
+    <div id="top-pairs-loading" class="loading">Loading top coalition pairs...</div>
+    <div id="top-pairs-content" style="display: none;">
+        <table id="top-pairs-table">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Candidates</th>
+                    <th>Coalition Type</th>
+                    <th>Shared Ballots</th>
+                    <th>Avg Distance</th>
+                    <th>Coalition Strength</th>
+                    <th>Strong/Weak Split</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Winner Coalition Analysis -->
+<div class="card">
+    <h2>🏆 Winner Coalition Analysis</h2>
+    <p>Analyzing coalition patterns among the three winning candidates: Sameer Kanal, Dan Ryan, and Elana Pirtle-Guiney</p>
+    <div id="winner-analysis-loading" class="loading">Loading winner coalition analysis...</div>
+    <div id="winner-analysis-content" style="display: none;">
+        <div class="grid" id="winner-pairs"></div>
+    </div>
+</div>
+
+<!-- Interactive Pair Explorer -->
+<div class="card">
+    <h2>🔍 Candidate Pair Explorer</h2>
+    <p>Select any two candidates to analyze their coalition relationship in detail</p>
+    
+    <div class="grid">
+        <div class="form-group">
+            <label for="candidate1-select">First Candidate:</label>
+            <select id="candidate1-select">
+                <option value="">Loading candidates...</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="candidate2-select">Second Candidate:</label>
+            <select id="candidate2-select">
+                <option value="">Loading candidates...</option>
+            </select>
+        </div>
+    </div>
+    
+    <button class="btn" onclick="analyzePair()">Analyze Pair</button>
+    
+    <div id="pair-analysis-result" style="display: none; margin-top: 1rem;">
+        <h3>Detailed Pair Analysis</h3>
+        <div id="pair-analysis-content"></div>
+        <div id="proximity-chart"></div>
+    </div>
+</div>
+
+<!-- Methodology Explanation -->
+<div class="card">
+    <h2>📊 Methodology</h2>
+    <div class="grid">
+        <div>
+            <h3>Coalition Types</h3>
+            <ul>
+                <li><strong>Strong:</strong> Candidates frequently ranked close together (avg distance ≤ 1.5, 60%+ close rankings)</li>
+                <li><strong>Moderate:</strong> Candidates often appear together with moderate proximity (avg distance ≤ 2.5, 40%+ close rankings)</li>
+                <li><strong>Strategic:</strong> Candidates appear together but with large ranking distances (50%+ distant rankings)</li>
+                <li><strong>Weak:</strong> Limited overlap with inconsistent ranking patterns</li>
+            </ul>
+        </div>
+        <div>
+            <h3>Key Metrics</h3>
+            <ul>
+                <li><strong>Avg Distance:</strong> Average ranking positions between candidates</li>
+                <li><strong>Coalition Strength:</strong> Combined metric of affinity and proximity</li>
+                <li><strong>Close Rankings:</strong> Ballots with candidates ranked ≤ 2 positions apart</li>
+                <li><strong>Distant Rankings:</strong> Ballots with candidates ranked ≥ 4 positions apart</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Global variables
+let candidates = [];
+let coalitionPairs = [];
+
+// Initialize the page
+document.addEventListener('DOMContentLoaded', async function() {
+    await loadCandidates();
+    await loadCoalitionTypes();
+    await loadTopPairs();
+    await loadWinnerAnalysis();
+});
+
+// Load candidates for dropdowns
+async function loadCandidates() {
+    try {
+        const data = await fetchData('/api/candidates');
+        candidates = data.candidates;
+        
+        const candidate1Select = document.getElementById('candidate1-select');
+        const candidate2Select = document.getElementById('candidate2-select');
+        
+        candidate1Select.innerHTML = '<option value="">Select first candidate...</option>';
+        candidate2Select.innerHTML = '<option value="">Select second candidate...</option>';
+        
+        candidates.forEach(candidate => {
+            const option1 = new Option(candidate.candidate_name, candidate.candidate_id);
+            const option2 = new Option(candidate.candidate_name, candidate.candidate_id);
+            candidate1Select.add(option1);
+            candidate2Select.add(option2);
+        });
+    } catch (error) {
+        console.error('Error loading candidates:', error);
+    }
+}
+
+// Load coalition type breakdown
+async function loadCoalitionTypes() {
+    try {
+        const data = await fetchData('/api/coalition/types');
+        
+        // Create pie chart
+        const traces = [{
+            type: 'pie',
+            labels: Object.keys(data.coalition_type_percentages),
+            values: Object.values(data.coalition_type_percentages),
+            textinfo: 'label+percent',
+            marker: {
+                colors: ['#e74c3c', '#f39c12', '#27ae60', '#3498db']
+            }
+        }];
+        
+        const layout = {
+            title: 'Coalition Types Distribution',
+            height: 400
+        };
+        
+        Plotly.newPlot('coalition-type-chart', traces, layout);
+        
+        // Create stats grid
+        const statsHtml = Object.entries(data.coalition_type_counts).map(([type, count]) => `
+            <div class="stat-box">
+                <span class="stat-number">${count}</span>
+                <span class="stat-label">${type.charAt(0).toUpperCase() + type.slice(1)} Coalitions</span>
+            </div>
+        `).join('');
+        
+        document.getElementById('coalition-type-stats').innerHTML = statsHtml;
+        
+        // Show examples
+        const examplesHtml = Object.entries(data.examples).map(([type, examples]) => `
+            <div>
+                <h4>${type.charAt(0).toUpperCase() + type.slice(1)} Coalition Examples:</h4>
+                <ul>
+                    ${examples.map(ex => `
+                        <li><strong>${ex.candidate_1_name}</strong> & <strong>${ex.candidate_2_name}</strong> 
+                        (${ex.shared_ballots.toLocaleString()} ballots, avg distance ${ex.avg_distance})</li>
+                    `).join('')}
+                </ul>
+            </div>
+        `).join('');
+        
+        document.getElementById('coalition-type-examples').innerHTML = examplesHtml;
+        
+        // Show content
+        document.getElementById('coalition-type-loading').style.display = 'none';
+        document.getElementById('coalition-type-content').style.display = 'block';
+        
+    } catch (error) {
+        showError('coalition-type-loading', 'Failed to load coalition type data');
+    }
+}
+
+// Load top coalition pairs
+async function loadTopPairs() {
+    try {
+        const data = await fetchData('/api/coalition/pairs/all?min_shared_ballots=1000');
+        coalitionPairs = data.detailed_pairs;
+        
+        const tbody = document.querySelector('#top-pairs-table tbody');
+        tbody.innerHTML = coalitionPairs.slice(0, 15).map((pair, index) => `
+            <tr>
+                <td>${index + 1}</td>
+                <td><strong>${pair.candidate_1_name}</strong> & <strong>${pair.candidate_2_name}</strong></td>
+                <td><span class="coalition-type-${pair.coalition_type}">${pair.coalition_type}</span></td>
+                <td>${pair.shared_ballots.toLocaleString()}</td>
+                <td>${pair.avg_ranking_distance}</td>
+                <td>${pair.coalition_strength_score.toFixed(3)}</td>
+                <td>${pair.strong_coalition_votes.toLocaleString()} / ${pair.weak_coalition_votes.toLocaleString()}</td>
+                <td>
+                    <button class="btn btn-secondary" onclick="quickAnalyzePair(${pair.candidate_1}, ${pair.candidate_2})">
+                        Analyze
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+        
+        document.getElementById('top-pairs-loading').style.display = 'none';
+        document.getElementById('top-pairs-content').style.display = 'block';
+        
+    } catch (error) {
+        showError('top-pairs-loading', 'Failed to load coalition pairs data');
+    }
+}
+
+// Load winner analysis
+async function loadWinnerAnalysis() {
+    try {
+        // Portland winners: Sameer Kanal (36), Elana Pirtle-Guiney (46), Dan Ryan (55)
+        const winners = [
+            {id: 36, name: 'Sameer Kanal'},
+            {id: 46, name: 'Elana Pirtle-Guiney'},
+            {id: 55, name: 'Dan Ryan'}
+        ];
+        
+        const winnerPairs = [
+            [36, 46], // Kanal & Pirtle-Guiney
+            [36, 55], // Kanal & Ryan
+            [46, 55]  // Pirtle-Guiney & Ryan
+        ];
+        
+        const pairAnalyses = await Promise.all(
+            winnerPairs.map(([id1, id2]) => fetchData(`/api/coalition/pairs/${id1}/${id2}`))
+        );
+        
+        const winnerPairsHtml = pairAnalyses.map((analysis, index) => {
+            const pair = analysis.pair_analysis;
+            const proximity = analysis.proximity_analysis;
+            
+            return `
+                <div class="card">
+                    <h3>${pair.candidate_1_name} & ${pair.candidate_2_name}</h3>
+                    <div class="grid">
+                        <div>
+                            <strong>Coalition Type:</strong> ${pair.coalition_type}<br>
+                            <strong>Shared Ballots:</strong> ${pair.shared_ballots.toLocaleString()}<br>
+                            <strong>Coalition Strength:</strong> ${pair.coalition_strength_score.toFixed(3)}
+                        </div>
+                        <div>
+                            <strong>Avg Distance:</strong> ${pair.avg_ranking_distance}<br>
+                            <strong>Close Rankings:</strong> ${proximity.close_rankings.toLocaleString()}<br>
+                            <strong>Distant Rankings:</strong> ${proximity.distant_rankings.toLocaleString()}
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary" onclick="quickAnalyzePair(${pair.candidate_1}, ${pair.candidate_2})">
+                        View Details
+                    </button>
+                </div>
+            `;
+        }).join('');
+        
+        document.getElementById('winner-pairs').innerHTML = winnerPairsHtml;
+        
+        document.getElementById('winner-analysis-loading').style.display = 'none';
+        document.getElementById('winner-analysis-content').style.display = 'block';
+        
+    } catch (error) {
+        showError('winner-analysis-loading', 'Failed to load winner analysis data');
+    }
+}
+
+// Analyze selected pair
+async function analyzePair() {
+    const candidate1Id = document.getElementById('candidate1-select').value;
+    const candidate2Id = document.getElementById('candidate2-select').value;
+    
+    if (!candidate1Id || !candidate2Id) {
+        alert('Please select both candidates');
+        return;
+    }
+    
+    if (candidate1Id === candidate2Id) {
+        alert('Please select two different candidates');
+        return;
+    }
+    
+    await quickAnalyzePair(parseInt(candidate1Id), parseInt(candidate2Id));
+}
+
+// Quick analyze pair (used by buttons)
+async function quickAnalyzePair(candidate1Id, candidate2Id) {
+    try {
+        document.getElementById('pair-analysis-result').style.display = 'block';
+        document.getElementById('pair-analysis-content').innerHTML = '<div class="loading">Loading detailed analysis...</div>';
+        
+        const data = await fetchData(`/api/coalition/pairs/${candidate1Id}/${candidate2Id}`);
+        const pair = data.pair_analysis;
+        const proximity = data.proximity_analysis;
+        
+        // Create detailed analysis content
+        const analysisHtml = `
+            <div class="grid">
+                <div class="card">
+                    <h4>Coalition Overview</h4>
+                    <p><strong>Type:</strong> ${pair.coalition_type}</p>
+                    <p><strong>Shared Ballots:</strong> ${pair.shared_ballots.toLocaleString()}</p>
+                    <p><strong>Coalition Strength:</strong> ${pair.coalition_strength_score.toFixed(3)}</p>
+                    <p><strong>Basic Affinity:</strong> ${pair.basic_affinity_score.toFixed(3)}</p>
+                    <p><strong>Proximity-Weighted Affinity:</strong> ${pair.proximity_weighted_affinity.toFixed(3)}</p>
+                </div>
+                <div class="card">
+                    <h4>Ranking Proximity</h4>
+                    <p><strong>Average Distance:</strong> ${proximity.avg_ranking_distance}</p>
+                    <p><strong>Median Distance:</strong> ${proximity.median_ranking_distance}</p>
+                    <p><strong>Range:</strong> ${proximity.min_distance} - ${proximity.max_distance}</p>
+                    <p><strong>Close Rankings (≤2):</strong> ${proximity.close_rankings.toLocaleString()}</p>
+                    <p><strong>Distant Rankings (≥4):</strong> ${proximity.distant_rankings.toLocaleString()}</p>
+                </div>
+                <div class="card">
+                    <h4>Vote Transfers</h4>
+                    <p><strong>${pair.candidate_1_name} → ${pair.candidate_2_name}:</strong> ${pair.transfer_votes_1_to_2.toLocaleString()}</p>
+                    <p><strong>${pair.candidate_2_name} → ${pair.candidate_1_name}:</strong> ${pair.transfer_votes_2_to_1.toLocaleString()}</p>
+                    <p><strong>Strong Coalition Votes:</strong> ${pair.strong_coalition_votes.toLocaleString()}</p>
+                    <p><strong>Weak Coalition Votes:</strong> ${pair.weak_coalition_votes.toLocaleString()}</p>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('pair-analysis-content').innerHTML = analysisHtml;
+        
+        // Create proximity distribution chart
+        const distances = Object.keys(proximity.distance_distribution).map(Number);
+        const counts = Object.values(proximity.distance_distribution);
+        
+        const trace = {
+            x: distances,
+            y: counts,
+            type: 'bar',
+            marker: {
+                color: distances.map(d => d <= 2 ? '#27ae60' : d >= 4 ? '#e74c3c' : '#f39c12')
+            }
+        };
+        
+        const layout = {
+            title: `Ranking Distance Distribution: ${pair.candidate_1_name} & ${pair.candidate_2_name}`,
+            xaxis: { title: 'Ranking Distance' },
+            yaxis: { title: 'Number of Ballots' },
+            height: 400
+        };
+        
+        Plotly.newPlot('proximity-chart', [trace], layout);
+        
+    } catch (error) {
+        document.getElementById('pair-analysis-content').innerHTML = `<div class="error">Error: ${error.message}</div>`;
+    }
+}
+</script>
+
+<style>
+.coalition-type-strong { 
+    background: #27ae60; 
+    color: white; 
+    padding: 2px 6px; 
+    border-radius: 3px; 
+    font-size: 0.85em; 
+}
+
+.coalition-type-moderate { 
+    background: #f39c12; 
+    color: white; 
+    padding: 2px 6px; 
+    border-radius: 3px; 
+    font-size: 0.85em; 
+}
+
+.coalition-type-weak { 
+    background: #e74c3c; 
+    color: white; 
+    padding: 2px 6px; 
+    border-radius: 3px; 
+    font-size: 0.85em; 
+}
+
+.coalition-type-strategic { 
+    background: #9b59b6; 
+    color: white; 
+    padding: 2px 6px; 
+    border-radius: 3px; 
+    font-size: 0.85em; 
+}
+
+#top-pairs-table th {
+    font-size: 0.9em;
+}
+
+#top-pairs-table td {
+    font-size: 0.85em;
+}
+</style>
+{% endblock %}
