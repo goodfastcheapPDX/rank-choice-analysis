@@ -103,6 +103,7 @@ class CVRParser:
                 column_name,
                 CAST(column_value AS INTEGER) as has_vote
             FROM rcv_data
+            WHERE Status = 0  -- Include only original ballots (not remade)
             UNPIVOT (
                 column_value FOR column_name IN ('{column_list}')
             )
