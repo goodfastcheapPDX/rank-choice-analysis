@@ -13,8 +13,7 @@ SELECT
 FROM information_schema.columns
 WHERE table_name = 'rcv_data'
   AND column_name LIKE 'Choice_%'
-  AND column_name NOT LIKE '%Write-in%'  -- Exclude write-ins for now
-  AND column_name NOT LIKE '%Uncertified%';  -- Exclude uncertified write-ins
+  AND column_name NOT LIKE '%Uncertified%';  -- Exclude only uncertified write-ins
 
 -- Create candidate lookup table (one row per candidate)
 CREATE OR REPLACE TABLE candidates AS
