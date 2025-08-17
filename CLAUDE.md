@@ -65,9 +65,9 @@ src/
 sql/               # SQL scripts for data transformation
 ├── 01_load_data.sql      # Load CVR data
 ├── 02_create_metadata.sql # Extract candidate metadata
-├── 03_normalize_votes.sql # Wide-to-long transformation
 ├── 04_basic_analysis.sql  # Basic analysis views
 └── 05_candidate_analysis.sql # Candidate-specific queries
+Note: Wide-to-long transformation handled dynamically in Python
 
 scripts/           # Command-line tools
 ├── process_data.py   # Process CVR data
@@ -209,3 +209,35 @@ python scripts/start_server.py --db election_data.db
 ```
 
 **Expected Outcome**: Verification should show `✅ VERIFICATION PASSED` once critical fixes are implemented.
+
+### 🎯 **Active Verification Fix Plan** (2025-08-17)
+
+**Current Sprint: Data Alignment & Parser Fixes**
+
+#### **Priority 1: Data Alignment Issues** ✅ In Progress
+1. **✅ Include Write-in Candidates** (COMPLETED)
+   - Fixed: Modified `02_create_metadata.sql` to include write-in choices
+   - Expected: Reduce total vote difference from 1,485 to ~1,274
+   - Commit: "Include write-in candidates in metadata extraction"
+
+2. **Ballot Universe Verification** (PENDING)
+   - Task: Investigate `Status` and `Remade` columns in CVR data for proper filtering
+   - Goal: Resolve threshold calculation discrepancy (19,729 vs 19,290)
+
+#### **Priority 2: Official Results Parser** (PENDING)
+1. **Winner Extraction Bug**
+   - Issue: Parser returns empty `Official winners: []`
+   - Target: `_parse_results_data()` method in `src/analysis/verification.py` ~line 45
+
+2. **Candidate Name Normalization**
+   - Task: Basic string cleaning/normalization for robust matching
+
+#### **Priority 3: OSS STV Library Evaluation** (FUTURE)
+- Research: Compare OpenRCV and PyRankVote against current implementation
+- Goal: Validate current algorithm or migrate to proven OSS solution
+- Note: Will break down into specific subtasks when reached
+
+**Working Protocol:**
+- Complete each task individually with git commits
+- Run verification tests after each task  
+- Update this plan as progress is made
