@@ -157,7 +157,7 @@ async function loadVoteFlow() {
         initializeRoundSelector();
         generateCandidateColors();
         displayVoteFlow();
-        displayRoundAnalysis();
+        await displayRoundAnalysis();
         displayTransferDetails();
         
         // Enable controls
@@ -368,14 +368,32 @@ function updateRoundInfo(currentRound) {
     roundInfoDiv.style.display = 'block';
 }
 
-function displayRoundAnalysis() {
+async function displayRoundAnalysis() {
     if (!voteFlowData) return;
     
     // Vote totals by round chart
     const rounds = voteFlowData.rounds;
-    const candidateIds = Object.keys(voteFlowData.candidate_flow_summary);
     
-    const traces = candidateIds.slice(0, 10).map(candidateId => {
+    // Get first-choice vote data to properly identify top candidates
+    let firstChoiceData;
+    try {
+        firstChoiceData = await fetchData('/api/first-choice');
+    } catch (error) {
+        console.error('Failed to load first-choice data for ranking:', error);
+        // Fallback to using all candidates in object order
+        firstChoiceData = Object.keys(voteFlowData.candidate_flow_summary).map(id => ({
+            candidate_id: parseInt(id),
+            first_choice_votes: 0
+        }));
+    }
+    
+    // Sort candidates by first-choice votes and take top 10
+    const topCandidateIds = firstChoiceData
+        .sort((a, b) => b.first_choice_votes - a.first_choice_votes)
+        .slice(0, 10)
+        .map(c => c.candidate_id);
+    
+    const traces = topCandidateIds.map(candidateId => {
         const candidateName = voteFlowData.candidate_flow_summary[candidateId].candidate_name;
         
         return {
@@ -389,7 +407,7 @@ function displayRoundAnalysis() {
     });
     
     const layout1 = {
-        title: 'Vote Totals by Round (Top 10 Candidates)',
+        title: 'Vote Totals by Round (Top 10 by First-Choice Votes)',
         xaxis: { title: 'Round' },
         yaxis: { title: 'Votes' },
         height: 400
@@ -476,7 +494,7 @@ function playAnimation() {
     }, 2000); // 2 seconds per round
 }
 
-function resetView() {
+async function resetView() {
     // Clear any running animation
     if (animationTimer) {
         clearInterval(animationTimer);
@@ -491,6 +509,7 @@ function resetView() {
     
     // Refresh display
     displayVoteFlow();
+    await displayRoundAnalysis();
 }
 
 // Event listeners for interactive controls
