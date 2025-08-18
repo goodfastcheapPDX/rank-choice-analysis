@@ -617,3 +617,134 @@ class CoalitionAnalyzer:
                 return pair
         
         return None
+    
+    def detect_coalition_clusters(self, min_strength: float = 0.2, min_group_size: int = 3) -> List[List[int]]:
+        """
+        Detect natural coalition clusters using graph-based clustering.
+        
+        Args:
+            min_strength: Minimum coalition strength to consider as connection
+            min_group_size: Minimum size for a valid coalition cluster
+            
+        Returns:
+            List of clusters, where each cluster is a list of candidate IDs
+        """
+        logger.info(f"Detecting coalition clusters with min_strength={min_strength}")
+        
+        try:
+            # Get detailed pairs for clustering
+            detailed_pairs = self.calculate_detailed_pairwise_analysis(min_shared_ballots=50)
+            
+            # Build adjacency graph of strong connections
+            connections = {}
+            for pair in detailed_pairs:
+                if pair.coalition_strength_score >= min_strength:
+                    # Add bidirectional connections
+                    if pair.candidate_1 not in connections:
+                        connections[pair.candidate_1] = set()
+                    if pair.candidate_2 not in connections:
+                        connections[pair.candidate_2] = set()
+                    
+                    connections[pair.candidate_1].add(pair.candidate_2)
+                    connections[pair.candidate_2].add(pair.candidate_1)
+            
+            # Find connected components using DFS
+            visited = set()
+            clusters = []
+            
+            def dfs(node, cluster):
+                if node in visited:
+                    return
+                visited.add(node)
+                cluster.append(node)
+                
+                if node in connections:
+                    for neighbor in connections[node]:
+                        if neighbor not in visited:
+                            dfs(neighbor, cluster)
+            
+            # Find all connected components
+            for candidate in connections:
+                if candidate not in visited:
+                    cluster = []
+                    dfs(candidate, cluster)
+                    if len(cluster) >= min_group_size:
+                        clusters.append(cluster)
+            
+            # Sort clusters by size (largest first)
+            clusters.sort(key=len, reverse=True)
+            
+            logger.info(f"Detected {len(clusters)} coalition clusters")
+            return clusters
+            
+        except Exception as e:
+            logger.error(f"Error detecting coalition clusters: {e}")
+            return []
+    
+    def get_cluster_analysis(self, clusters: List[List[int]]) -> Dict[str, Any]:
+        """
+        Analyze detected coalition clusters for insights.
+        
+        Args:
+            clusters: List of candidate ID clusters
+            
+        Returns:
+            Dictionary with cluster analysis
+        """
+        if not clusters:
+            return {"clusters": [], "summary": {"total_clusters": 0}}
+        
+        self._load_candidate_data()
+        candidate_names = dict(zip(self.candidates_df['candidate_id'], self.candidates_df['candidate_name']))
+        
+        cluster_analysis = []
+        
+        for i, cluster in enumerate(clusters):
+            cluster_info = {
+                "cluster_id": i + 1,
+                "size": len(cluster),
+                "candidates": [
+                    {
+                        "id": cand_id,
+                        "name": candidate_names.get(cand_id, f"Candidate {cand_id}")
+                    }
+                    for cand_id in cluster
+                ],
+                "internal_strength": 0.0,
+                "winners_in_cluster": 0
+            }
+            
+            # Calculate internal coalition strength
+            detailed_pairs = self.calculate_detailed_pairwise_analysis(min_shared_ballots=10)
+            internal_pairs = [
+                pair for pair in detailed_pairs 
+                if pair.candidate_1 in cluster and pair.candidate_2 in cluster
+            ]
+            
+            if internal_pairs:
+                cluster_info["internal_strength"] = sum(p.coalition_strength_score for p in internal_pairs) / len(internal_pairs)
+            
+            # Count winners in cluster
+            winners = [36, 46, 55]  # Portland winners
+            cluster_info["winners_in_cluster"] = len([c for c in cluster if c in winners])
+            cluster_info["has_winners"] = cluster_info["winners_in_cluster"] > 0
+            
+            cluster_analysis.append(cluster_info)
+        
+        # Summary statistics
+        total_candidates_clustered = sum(len(cluster) for cluster in clusters)
+        avg_cluster_size = total_candidates_clustered / len(clusters) if clusters else 0
+        largest_cluster_size = max(len(cluster) for cluster in clusters) if clusters else 0
+        
+        summary = {
+            "total_clusters": len(clusters),
+            "total_candidates_clustered": total_candidates_clustered,
+            "avg_cluster_size": round(avg_cluster_size, 1),
+            "largest_cluster_size": largest_cluster_size,
+            "clusters_with_winners": len([c for c in cluster_analysis if c["has_winners"]])
+        }
+        
+        return {
+            "clusters": cluster_analysis,
+            "summary": summary
+        }

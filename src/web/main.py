@@ -730,6 +730,122 @@ async def get_coalition_type_breakdown():
         logger.error(f"Coalition type breakdown failed: {e}")
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
+@app.get("/api/coalition/network")
+async def get_coalition_network_data(min_shared_ballots: int = 100, min_strength: float = 0.1):
+    """Get network graph data for coalition visualization."""
+    database = get_database()
+    if not database or not database.table_exists("ballots_long"):
+        raise HTTPException(status_code=400, detail="No data loaded")
+    
+    try:
+        analyzer = CoalitionAnalyzer(database)
+        
+        # Get all candidates for nodes
+        candidates = database.query_with_retry("SELECT candidate_id, candidate_name FROM candidates ORDER BY candidate_name")
+        
+        # Get ranking-weighted scores for each candidate (1st=6pts, 2nd=5pts, 3rd=4pts, etc.)
+        candidate_weighted_scores = database.query_with_retry("""
+            SELECT 
+                candidate_id,
+                SUM(CASE 
+                    WHEN rank_position = 1 THEN 6
+                    WHEN rank_position = 2 THEN 5
+                    WHEN rank_position = 3 THEN 4
+                    WHEN rank_position = 4 THEN 3
+                    WHEN rank_position = 5 THEN 2
+                    WHEN rank_position = 6 THEN 1
+                    ELSE 0
+                END) as weighted_score
+            FROM ballots_long
+            GROUP BY candidate_id
+        """)
+        metrics_lookup = dict(zip(candidate_weighted_scores['candidate_id'], candidate_weighted_scores['weighted_score']))
+        
+        # Create nodes data
+        nodes = []
+        winners = [36, 46, 55]  # Portland winners
+        for _, candidate in candidates.iterrows():
+            candidate_id = candidate['candidate_id']
+            vote_count = metrics_lookup.get(candidate_id, 0)
+            
+            nodes.append({
+                "id": str(candidate_id),
+                "name": candidate['candidate_name'],
+                "votes": vote_count,
+                "isWinner": candidate_id in winners,
+                "group": "winner" if candidate_id in winners else "candidate"
+            })
+        
+        # Get detailed pairs for edges
+        detailed_pairs = analyzer.calculate_detailed_pairwise_analysis(min_shared_ballots=min_shared_ballots)
+        
+        # Create edges data
+        edges = []
+        for pair in detailed_pairs:
+            if pair.coalition_strength_score >= min_strength:
+                edges.append({
+                    "source": str(pair.candidate_1),
+                    "target": str(pair.candidate_2),
+                    "strength": round(pair.coalition_strength_score, 4),
+                    "sharedBallots": pair.shared_ballots,
+                    "avgDistance": round(pair.avg_ranking_distance, 2),
+                    "coalitionType": pair.coalition_type,
+                    "strongVotes": pair.strong_coalition_votes,
+                    "weakVotes": pair.weak_coalition_votes,
+                    "basicAffinity": round(pair.basic_affinity_score, 4),
+                    "proximityAffinity": round(pair.proximity_weighted_affinity, 4)
+                })
+        
+        # Calculate network statistics
+        network_stats = {
+            "totalNodes": len(nodes),
+            "totalEdges": len(edges),
+            "avgCoalitionStrength": round(sum(e["strength"] for e in edges) / len(edges), 4) if edges else 0,
+            "strongCoalitions": len([e for e in edges if e["coalitionType"] == "strong"]),
+            "moderateCoalitions": len([e for e in edges if e["coalitionType"] == "moderate"]),
+            "weakCoalitions": len([e for e in edges if e["coalitionType"] == "weak"]),
+            "strategicCoalitions": len([e for e in edges if e["coalitionType"] == "strategic"])
+        }
+        
+        result = {
+            "nodes": nodes,
+            "edges": edges,
+            "stats": network_stats,
+            "metadata": {
+                "minSharedBallots": min_shared_ballots,
+                "minStrength": min_strength,
+                "generatedAt": pd.Timestamp.now().isoformat()
+            }
+        }
+        
+        return convert_numpy_types(result)
+        
+    except Exception as e:
+        logger.error(f"Coalition network data generation failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Network generation failed: {str(e)}")
+
+@app.get("/api/coalition/clusters")
+async def get_coalition_clusters(min_strength: float = 0.2, min_group_size: int = 3):
+    """Get automatically detected coalition clusters."""
+    database = get_database()
+    if not database or not database.table_exists("ballots_long"):
+        raise HTTPException(status_code=400, detail="No data loaded")
+    
+    try:
+        analyzer = CoalitionAnalyzer(database)
+        
+        # Detect clusters
+        clusters = analyzer.detect_coalition_clusters(min_strength=min_strength, min_group_size=min_group_size)
+        
+        # Get detailed analysis
+        cluster_analysis = analyzer.get_cluster_analysis(clusters)
+        
+        return convert_numpy_types(cluster_analysis)
+        
+    except Exception as e:
+        logger.error(f"Coalition clustering failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Clustering failed: {str(e)}")
+
 # Candidates Page and Enhanced API Endpoints
 @app.get("/candidates")
 async def candidates_page(request: Request):

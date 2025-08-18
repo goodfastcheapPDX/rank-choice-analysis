@@ -2,6 +2,259 @@
 
 {% block title %}Coalition Analysis - Ranked Elections Analyzer{% endblock %}
 
+{% block styles %}
+<style>
+/* Cluster Visualization Styles */
+.cluster-controls {
+    background: #f0f4ff;
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+    border-left: 4px solid #3498db;
+}
+
+.cluster-card {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.cluster-card.has-winners {
+    border-left: 4px solid #e74c3c;
+    background: #fff5f5;
+}
+
+.cluster-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.cluster-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.cluster-metrics {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    font-size: 0.9rem;
+    color: #7f8c8d;
+}
+
+.cluster-candidates {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.candidate-chip {
+    background: #ecf0f1;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    color: #2c3e50;
+    border: 1px solid #bdc3c7;
+}
+
+.candidate-chip.winner {
+    background: #e74c3c;
+    color: white;
+    border-color: #c0392b;
+}
+
+/* Network Visualization Styles */
+.network-controls {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    min-width: 150px;
+}
+
+.control-group label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.control-group input, .control-group select {
+    padding: 0.4rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.network-stats {
+    background: #e8f5e8;
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    border-left: 4px solid #27ae60;
+}
+
+#network-graph {
+    width: 100%;
+    height: 600px;
+    min-height: 600px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+    background: #fafafa;
+}
+
+.network-legend {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 1rem;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    font-size: 0.9rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.legend-node {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid #333;
+}
+
+.legend-node.winner {
+    background: #e74c3c;
+    border-color: #c0392b;
+}
+
+.legend-node.candidate {
+    background: #3498db;
+    border-color: #2980b9;
+}
+
+.legend-edge {
+    width: 30px;
+    height: 3px;
+    border-radius: 2px;
+}
+
+.legend-edge.strong {
+    background: #27ae60;
+}
+
+.legend-edge.moderate {
+    background: #f39c12;
+}
+
+.legend-edge.weak {
+    background: #95a5a6;
+}
+
+/* Network node and edge styles */
+.network-node {
+    cursor: pointer;
+    stroke: #333;
+    stroke-width: 2px;
+}
+
+.network-node.winner {
+    fill: #e74c3c;
+    stroke: #c0392b;
+}
+
+.network-node.candidate {
+    fill: #3498db;
+    stroke: #2980b9;
+}
+
+.network-node:hover {
+    stroke-width: 3px;
+    filter: brightness(1.1);
+}
+
+.network-edge {
+    stroke-opacity: 0.8;
+}
+
+.network-edge.strong {
+    stroke: #27ae60;
+}
+
+.network-edge.moderate {
+    stroke: #f39c12;
+}
+
+.network-edge.weak {
+    stroke: #95a5a6;
+}
+
+.network-edge.strategic {
+    stroke: #9b59b6;
+    stroke-dasharray: 5,5;
+}
+
+.network-label {
+    font-size: 12px;
+    font-weight: 600;
+    fill: #2c3e50;
+    text-anchor: middle;
+    pointer-events: none;
+    text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+}
+
+.network-tooltip {
+    position: absolute;
+    background: rgba(0,0,0,0.9);
+    color: white;
+    padding: 0.8rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    pointer-events: none;
+    z-index: 1000;
+    max-width: 300px;
+    line-height: 1.4;
+}
+
+.btn.secondary {
+    background: #95a5a6;
+    color: white;
+}
+
+.btn.secondary:hover {
+    background: #7f8c8d;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="card">
     <h2>🤝 Coalition Analysis Dashboard</h2>
@@ -50,6 +303,92 @@
     <div id="winner-analysis-loading" class="loading">Loading winner coalition analysis...</div>
     <div id="winner-analysis-content" style="display: none;">
         <div class="grid" id="winner-pairs"></div>
+    </div>
+</div>
+
+<!-- Coalition Clusters -->
+<div class="card">
+    <h2>🎯 Detected Coalition Groups</h2>
+    <p>Automatically detected coalition clusters based on strong relationships between candidates</p>
+    
+    <div class="cluster-controls">
+        <div class="control-group">
+            <label for="cluster-strength">Min Coalition Strength:</label>
+            <input type="range" id="cluster-strength" min="0.1" max="0.5" step="0.05" value="0.2">
+            <span id="cluster-strength-value">0.20</span>
+        </div>
+        <div class="control-group">
+            <label for="cluster-size">Min Group Size:</label>
+            <input type="range" id="cluster-size" min="2" max="6" step="1" value="3">
+            <span id="cluster-size-value">3</span>
+        </div>
+        <button class="btn" onclick="updateClusters()">Update Clusters</button>
+    </div>
+    
+    <div id="clusters-loading" class="loading">Loading coalition clusters...</div>
+    <div id="clusters-content" style="display: none;">
+        <div id="clusters-summary"></div>
+        <div id="clusters-list"></div>
+    </div>
+</div>
+
+<!-- Coalition Network Visualization -->
+<div class="card">
+    <h2>🕸️ Interactive Coalition Network</h2>
+    <p>Explore candidate relationships as an interactive network graph. Node size represents weighted voter preference (1st choice = 6 points, 2nd = 5 points, etc.), edge thickness represents coalition strength. <strong>Use mouse wheel to zoom, drag to pan, click nodes to highlight connections.</strong></p>
+    
+    <div class="network-controls">
+        <div class="control-group">
+            <label for="strength-threshold">Coalition Strength Threshold:</label>
+            <input type="range" id="strength-threshold" min="0" max="1" step="0.05" value="0.1">
+            <span id="strength-value">0.10</span>
+        </div>
+        <div class="control-group">
+            <label for="ballots-threshold">Min Shared Ballots:</label>
+            <input type="range" id="ballots-threshold" min="50" max="500" step="25" value="100">
+            <span id="ballots-value">100</span>
+        </div>
+        <div class="control-group">
+            <label for="coalition-filter">Coalition Type:</label>
+            <select id="coalition-filter">
+                <option value="all">All Types</option>
+                <option value="strong">Strong Only</option>
+                <option value="moderate">Moderate Only</option>
+                <option value="weak">Weak Only</option>
+                <option value="strategic">Strategic Only</option>
+            </select>
+        </div>
+        <button class="btn" onclick="updateNetwork()">Update Network</button>
+        <button class="btn secondary" onclick="resetNetwork()">Reset View</button>
+    </div>
+    
+    <div id="network-loading" class="loading">Loading coalition network...</div>
+    <div id="network-container" style="display: none;">
+        <div id="network-stats" class="network-stats"></div>
+        <div id="network-graph"></div>
+        <div id="network-legend" class="network-legend">
+            <h4>Legend</h4>
+            <div class="legend-item">
+                <div class="legend-node winner"></div>
+                <span>Winner</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-node candidate"></div>
+                <span>Other Candidate</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-edge strong"></div>
+                <span>Strong Coalition</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-edge moderate"></div>
+                <span>Moderate Coalition</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-edge weak"></div>
+                <span>Weak Coalition</span>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -121,6 +460,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     await loadCoalitionTypes();
     await loadTopPairs();
     await loadWinnerAnalysis();
+    await loadCoalitionClusters();
+    await loadNetworkVisualization();
+    
+    // Set up control listeners
+    setupNetworkControls();
+    setupClusterControls();
 });
 
 // Load candidates for dropdowns
@@ -375,6 +720,439 @@ async function quickAnalyzePair(candidate1Id, candidate2Id) {
     } catch (error) {
         document.getElementById('pair-analysis-content').innerHTML = `<div class="error">Error: ${error.message}</div>`;
     }
+}
+
+// Network Visualization Functions
+let networkData = null;
+let networkSvg = null;
+let simulation = null;
+
+async function loadNetworkVisualization() {
+    try {
+        document.getElementById('network-loading').style.display = 'block';
+        networkData = await fetchData('/api/coalition/network?min_shared_ballots=100&min_strength=0.1');
+        
+        console.log('Network data loaded:', {
+            nodes: networkData?.nodes?.length,
+            edges: networkData?.edges?.length,
+            stats: networkData?.stats
+        });
+        
+        document.getElementById('network-loading').style.display = 'none';
+        document.getElementById('network-container').style.display = 'block';
+        
+        updateNetworkStats();
+        renderNetwork();
+    } catch (error) {
+        document.getElementById('network-loading').innerHTML = `<div class="error">Error loading network: ${error.message}</div>`;
+        console.error('Network loading error:', error);
+    }
+}
+
+function setupNetworkControls() {
+    // Strength threshold slider
+    const strengthSlider = document.getElementById('strength-threshold');
+    const strengthValue = document.getElementById('strength-value');
+    
+    strengthSlider.addEventListener('input', function() {
+        strengthValue.textContent = parseFloat(this.value).toFixed(2);
+    });
+    
+    // Ballots threshold slider
+    const ballotsSlider = document.getElementById('ballots-threshold');
+    const ballotsValue = document.getElementById('ballots-value');
+    
+    ballotsSlider.addEventListener('input', function() {
+        ballotsValue.textContent = this.value;
+    });
+}
+
+async function updateNetwork() {
+    const strengthThreshold = parseFloat(document.getElementById('strength-threshold').value);
+    const ballotsThreshold = parseInt(document.getElementById('ballots-threshold').value);
+    const coalitionFilter = document.getElementById('coalition-filter').value;
+    
+    try {
+        document.getElementById('network-loading').style.display = 'block';
+        document.getElementById('network-container').style.display = 'none';
+        
+        networkData = await fetchData(`/api/coalition/network?min_shared_ballots=${ballotsThreshold}&min_strength=${strengthThreshold}`);
+        
+        // Apply coalition type filter
+        if (coalitionFilter !== 'all') {
+            networkData.edges = networkData.edges.filter(edge => edge.coalitionType === coalitionFilter);
+        }
+        
+        document.getElementById('network-loading').style.display = 'none';
+        document.getElementById('network-container').style.display = 'block';
+        
+        updateNetworkStats();
+        renderNetwork();
+    } catch (error) {
+        document.getElementById('network-loading').innerHTML = `<div class="error">Error updating network: ${error.message}</div>`;
+        console.error('Network update error:', error);
+    }
+}
+
+function updateNetworkStats() {
+    if (!networkData) return;
+    
+    const stats = networkData.stats;
+    document.getElementById('network-stats').innerHTML = `
+        <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+            <div><strong>Candidates:</strong> ${stats.totalNodes}</div>
+            <div><strong>Coalition Pairs:</strong> ${stats.totalEdges}</div>
+            <div><strong>Avg Strength:</strong> ${stats.avgCoalitionStrength}</div>
+            <div><strong>Strong:</strong> ${stats.strongCoalitions}</div>
+            <div><strong>Moderate:</strong> ${stats.moderateCoalitions}</div>
+            <div><strong>Weak:</strong> ${stats.weakCoalitions}</div>
+            <div><strong>Strategic:</strong> ${stats.strategicCoalitions}</div>
+        </div>
+    `;
+}
+
+function renderNetwork() {
+    if (!networkData || !networkData.nodes || !networkData.edges) {
+        console.error('Invalid network data:', networkData);
+        document.getElementById('network-graph').innerHTML = '<div style="padding: 2rem; text-align: center; color: #7f8c8d;">No network data to display</div>';
+        return;
+    }
+    
+    console.log('Rendering network with:', networkData.nodes.length, 'nodes and', networkData.edges.length, 'edges');
+    console.log('Sample edge data:', networkData.edges.slice(0, 3));
+    console.log('Coalition types in edges:', [...new Set(networkData.edges.map(e => e.coalitionType))]);
+    
+    // Debug node vote values and create scaling function
+    const voteValues = networkData.nodes.map(n => n.votes).sort((a, b) => b - a);
+    const minVotes = Math.min(...voteValues);
+    const maxVotes = Math.max(...voteValues);
+    const voteRange = maxVotes - minVotes;
+    
+    // Create scaling function for node radius based on area (more visually accurate)
+    const nodeRadius = (votes) => {
+        if (voteRange === 0) return 15;
+        
+        // Use square root scaling so area is proportional to votes
+        // This makes visual size differences match data differences
+        const minArea = Math.PI * 6 * 6; // Min circle area (6px radius)
+        const maxArea = Math.PI * 30 * 30; // Max circle area (30px radius)
+        
+        const normalized = (votes - minVotes) / voteRange;
+        const area = minArea + (normalized * (maxArea - minArea));
+        return Math.sqrt(area / Math.PI); // Convert back to radius
+    };
+    
+    console.log('Vote values range:', {
+        min: minVotes,
+        max: maxVotes,
+        range: voteRange,
+        median: voteValues[Math.floor(voteValues.length / 2)],
+        sample: voteValues.slice(0, 5)
+    });
+    
+    // Show top and bottom candidates
+    const nodesByVotes = networkData.nodes.sort((a, b) => b.votes - a.votes);
+    console.log('Top candidates:', nodesByVotes.slice(0, 3).map(n => ({name: n.name, votes: n.votes, radius: nodeRadius(n.votes)})));
+    console.log('Bottom candidates:', nodesByVotes.slice(-3).map(n => ({name: n.name, votes: n.votes, radius: nodeRadius(n.votes)})));
+    
+    // Check if we have any edges to display
+    if (networkData.edges.length === 0) {
+        document.getElementById('network-graph').innerHTML = `
+            <div style="padding: 2rem; text-align: center; color: #7f8c8d;">
+                <h3>No Coalition Connections Found</h3>
+                <p>Try lowering the coalition strength threshold or minimum shared ballots to see more connections.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Clear existing visualization
+    document.getElementById('network-graph').innerHTML = '';
+    
+    const container = document.getElementById('network-graph');
+    const width = container.offsetWidth || 800;
+    const height = 600; // Fixed height since CSS might not be reliable
+    
+    console.log('Network container dimensions:', { width, height, offsetWidth: container.offsetWidth, offsetHeight: container.offsetHeight });
+    
+    // Create SVG with zoom
+    const svg = d3.select('#network-graph')
+        .append('svg')
+        .attr('width', width)
+        .attr('height', height);
+    
+    // Add zoom behavior
+    const zoom = d3.zoom()
+        .scaleExtent([0.3, 3])
+        .on('zoom', function(event) {
+            networkSvg.attr('transform', event.transform);
+        });
+    
+    svg.call(zoom);
+    
+    // Create the main group that will be transformed
+    networkSvg = svg.append('g');
+    
+    // Create tooltip
+    const tooltip = d3.select('#network-graph')
+        .append('div')
+        .attr('class', 'network-tooltip')
+        .style('opacity', 0);
+    
+    // Create force simulation
+    simulation = d3.forceSimulation(networkData.nodes)
+        .force('link', d3.forceLink(networkData.edges).id(d => d.id).distance(d => Math.max(80, 150 - d.strength * 100)))
+        .force('charge', d3.forceManyBody().strength(-800))
+        .force('center', d3.forceCenter(width / 2, height / 2))
+        .force('collision', d3.forceCollide().radius(d => nodeRadius(d.votes) + 5));
+    
+    // Add edges
+    const link = networkSvg.append('g')
+        .attr('class', 'links')
+        .selectAll('line')
+        .data(networkData.edges)
+        .enter().append('line')
+        .attr('class', d => `network-edge ${d.coalitionType}`)
+        .attr('stroke-width', d => Math.max(0.5, d.strength * 4))
+        .attr('stroke', d => {
+            switch(d.coalitionType) {
+                case 'strong': return '#27ae60';
+                case 'moderate': return '#f39c12';
+                case 'weak': return '#95a5a6';
+                case 'strategic': return '#9b59b6';
+                default: return '#95a5a6';
+            }
+        })
+        .attr('stroke-opacity', 0.6)
+        .attr('stroke-dasharray', d => d.coalitionType === 'strategic' ? '5,5' : null)
+        .on('mouseover', function(event, d) {
+            tooltip.transition().duration(200).style('opacity', .9);
+            tooltip.html(`
+                <strong>${d.source.name} ↔ ${d.target.name}</strong><br/>
+                Coalition Type: ${d.coalitionType}<br/>
+                Strength: ${d.strength}<br/>
+                Shared Ballots: ${d.sharedBallots}<br/>
+                Avg Distance: ${d.avgDistance}<br/>
+                Strong Votes: ${d.strongVotes}<br/>
+                Weak Votes: ${d.weakVotes}
+            `)
+            .style('left', (event.pageX + 10) + 'px')
+            .style('top', (event.pageY - 28) + 'px');
+        })
+        .on('mouseout', function() {
+            tooltip.transition().duration(500).style('opacity', 0);
+        });
+    
+    // Add nodes
+    const node = networkSvg.append('g')
+        .attr('class', 'nodes')
+        .selectAll('circle')
+        .data(networkData.nodes)
+        .enter().append('circle')
+        .attr('class', d => `network-node ${d.group}`)
+        .attr('r', d => nodeRadius(d.votes))
+        .attr('fill', d => d.isWinner ? '#e74c3c' : '#3498db')
+        .attr('stroke', d => d.isWinner ? '#c0392b' : '#2980b9')
+        .attr('stroke-width', 2)
+        .call(d3.drag()
+            .on('start', dragstarted)
+            .on('drag', dragged)
+            .on('end', dragended))
+        .on('mouseover', function(event, d) {
+            tooltip.transition().duration(200).style('opacity', .9);
+            tooltip.html(`
+                <strong>${d.name}</strong><br/>
+                Weighted Score: ${d.votes.toLocaleString()} points<br/>
+                <small>(1st=6pts, 2nd=5pts, 3rd=4pts, etc.)</small><br/>
+                Status: ${d.isWinner ? 'Winner' : 'Eliminated'}<br/>
+                Coalition Connections: ${networkData.edges.filter(e => e.source.id === d.id || e.target.id === d.id).length}
+            `)
+            .style('left', (event.pageX + 10) + 'px')
+            .style('top', (event.pageY - 28) + 'px');
+        })
+        .on('mouseout', function() {
+            tooltip.transition().duration(500).style('opacity', 0);
+        })
+        .on('click', function(event, d) {
+            // Highlight connections
+            link.style('opacity', l => (l.source.id === d.id || l.target.id === d.id) ? 1 : 0.1);
+            node.style('opacity', n => (n.id === d.id || 
+                networkData.edges.some(e => (e.source.id === d.id && e.target.id === n.id) || 
+                                           (e.target.id === d.id && e.source.id === n.id))) ? 1 : 0.3);
+        });
+    
+    // Add labels
+    const label = networkSvg.append('g')
+        .attr('class', 'labels')
+        .selectAll('text')
+        .data(networkData.nodes)
+        .enter().append('text')
+        .attr('class', 'network-label')
+        .text(d => d.name.split(' ').slice(-1)[0]) // Show last name only
+        .attr('dy', -3);
+    
+    // Update positions on simulation tick
+    simulation.on('tick', function() {
+        link
+            .attr('x1', d => d.source.x)
+            .attr('y1', d => d.source.y)
+            .attr('x2', d => d.target.x)
+            .attr('y2', d => d.target.y);
+        
+        node
+            .attr('cx', d => d.x)
+            .attr('cy', d => d.y);
+        
+        label
+            .attr('x', d => d.x)
+            .attr('y', d => d.y);
+    });
+    
+    // Drag functions
+    function dragstarted(event, d) {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+    }
+    
+    function dragged(event, d) {
+        d.fx = event.x;
+        d.fy = event.y;
+    }
+    
+    function dragended(event, d) {
+        if (!event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+    }
+}
+
+function resetNetwork() {
+    // Reset all opacities
+    if (networkSvg) {
+        networkSvg.selectAll('.network-edge').style('opacity', 0.8);
+        networkSvg.selectAll('.network-node').style('opacity', 1);
+    }
+    
+    // Reset controls
+    document.getElementById('strength-threshold').value = 0.1;
+    document.getElementById('strength-value').textContent = '0.10';
+    document.getElementById('ballots-threshold').value = 100;
+    document.getElementById('ballots-value').textContent = '100';
+    document.getElementById('coalition-filter').value = 'all';
+    
+    // Reload network
+    loadNetworkVisualization();
+}
+
+// Coalition Clustering Functions
+async function loadCoalitionClusters() {
+    try {
+        document.getElementById('clusters-loading').style.display = 'block';
+        const clusterData = await fetchData('/api/coalition/clusters?min_strength=0.2&min_group_size=3');
+        
+        document.getElementById('clusters-loading').style.display = 'none';
+        document.getElementById('clusters-content').style.display = 'block';
+        
+        renderClusters(clusterData);
+    } catch (error) {
+        document.getElementById('clusters-loading').innerHTML = `<div class="error">Error loading clusters: ${error.message}</div>`;
+        console.error('Clusters loading error:', error);
+    }
+}
+
+function setupClusterControls() {
+    // Cluster strength slider
+    const strengthSlider = document.getElementById('cluster-strength');
+    const strengthValue = document.getElementById('cluster-strength-value');
+    
+    strengthSlider.addEventListener('input', function() {
+        strengthValue.textContent = parseFloat(this.value).toFixed(2);
+    });
+    
+    // Cluster size slider
+    const sizeSlider = document.getElementById('cluster-size');
+    const sizeValue = document.getElementById('cluster-size-value');
+    
+    sizeSlider.addEventListener('input', function() {
+        sizeValue.textContent = this.value;
+    });
+}
+
+async function updateClusters() {
+    const minStrength = parseFloat(document.getElementById('cluster-strength').value);
+    const minSize = parseInt(document.getElementById('cluster-size').value);
+    
+    try {
+        document.getElementById('clusters-loading').style.display = 'block';
+        document.getElementById('clusters-content').style.display = 'none';
+        
+        const clusterData = await fetchData(`/api/coalition/clusters?min_strength=${minStrength}&min_group_size=${minSize}`);
+        
+        document.getElementById('clusters-loading').style.display = 'none';
+        document.getElementById('clusters-content').style.display = 'block';
+        
+        renderClusters(clusterData);
+    } catch (error) {
+        document.getElementById('clusters-loading').innerHTML = `<div class="error">Error updating clusters: ${error.message}</div>`;
+        console.error('Clusters update error:', error);
+    }
+}
+
+function renderClusters(clusterData) {
+    if (!clusterData || !clusterData.clusters) {
+        document.getElementById('clusters-content').innerHTML = '<div class="error">No cluster data available</div>';
+        return;
+    }
+    
+    const summary = clusterData.summary;
+    
+    // Render summary
+    document.getElementById('clusters-summary').innerHTML = `
+        <div style="background: #e8f5e8; padding: 1rem; border-radius: 6px; margin-bottom: 1rem; border-left: 4px solid #27ae60;">
+            <strong>Cluster Summary:</strong>
+            ${summary.total_clusters} groups found, 
+            ${summary.total_candidates_clustered} candidates clustered, 
+            avg size: ${summary.avg_cluster_size}, 
+            largest: ${summary.largest_cluster_size} candidates,
+            ${summary.clusters_with_winners} clusters contain winners
+        </div>
+    `;
+    
+    // Render clusters
+    if (clusterData.clusters.length === 0) {
+        document.getElementById('clusters-list').innerHTML = '<div class="loading">No coalition clusters detected with current parameters. Try lowering the coalition strength threshold.</div>';
+        return;
+    }
+    
+    const clustersHtml = clusterData.clusters.map(cluster => {
+        const hasWinners = cluster.has_winners;
+        const candidateChips = cluster.candidates.map(candidate => {
+            const isWinner = [36, 46, 55].includes(candidate.id);
+            return `<span class="candidate-chip ${isWinner ? 'winner' : ''}">${candidate.name}</span>`;
+        }).join('');
+        
+        return `
+            <div class="cluster-card ${hasWinners ? 'has-winners' : ''}">
+                <div class="cluster-header">
+                    <div class="cluster-title">
+                        Coalition Group ${cluster.cluster_id}
+                        ${hasWinners ? ' 🏆' : ''}
+                    </div>
+                    <div class="cluster-metrics">
+                        <span><strong>Size:</strong> ${cluster.size}</span>
+                        <span><strong>Strength:</strong> ${cluster.internal_strength.toFixed(3)}</span>
+                        ${hasWinners ? `<span><strong>Winners:</strong> ${cluster.winners_in_cluster}</span>` : ''}
+                    </div>
+                </div>
+                <div class="cluster-candidates">
+                    ${candidateChips}
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    document.getElementById('clusters-list').innerHTML = clustersHtml;
 }
 </script>
 
