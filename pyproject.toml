@@ -26,6 +26,9 @@ dev = [
     "pytest>=8.3.4",
     "black>=24.10.0",
     "isort>=5.13.2",
+    "pre-commit>=4.0.1",
+    "flake8>=7.1.1",
+    "bandit>=1.7.10",
 ]
 
 [tool.black]
@@ -35,3 +38,21 @@ target-version = ['py39']
 [tool.isort]
 profile = "black"
 line_length = 88
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+skips = ["B101"]  # Skip assert_used test
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+markers = [
+    "unit: marks tests as unit tests (fast, no external dependencies)",
+    "integration: marks tests as integration tests (medium speed, database required)",
+    "golden: marks tests as golden dataset validation (slow, full verification)",
+    "invariant: marks tests as mathematical invariant validation",
+    "smoke: marks tests as smoke tests (basic functionality check)"
+]

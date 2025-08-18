@@ -41,26 +41,26 @@ class DetailedCandidatePair:
     candidate_1_name: str
     candidate_2: int
     candidate_2_name: str
-    
+
     # Basic co-occurrence
     shared_ballots: int
     total_ballots_1: int
     total_ballots_2: int
-    
+
     # Ranking proximity analysis
     ranking_distances: List[int]  # All observed distances between rankings
     avg_ranking_distance: float
     min_ranking_distance: int
     max_ranking_distance: int
-    
+
     # Proximity-weighted metrics
     strong_coalition_votes: int  # Ballots with candidates ranked 1-2, 2-3, etc.
     weak_coalition_votes: int   # Ballots with candidates ranked far apart
-    
+
     # Transfer analysis
     transfer_votes_1_to_2: int  # If 1 eliminated, how many go to 2
     transfer_votes_2_to_1: int  # If 2 eliminated, how many go to 1
-    
+
     # Affinity scores
     basic_affinity_score: float  # Current Jaccard similarity
     proximity_weighted_affinity: float  # New proximity-weighted score
@@ -72,13 +72,13 @@ class DetailedCandidatePair:
 ```python
 def calculate_detailed_pairwise_analysis(self, min_shared_ballots: int = 10) -> List[DetailedCandidatePair]:
     """Calculate comprehensive analysis for all candidate pairs."""
-    
+
 def analyze_ranking_proximity(self, candidate_1: int, candidate_2: int) -> Dict:
     """Analyze how close candidates typically appear in rankings."""
-    
+
 def calculate_proximity_weighted_affinity(self, candidate_1: int, candidate_2: int) -> float:
     """Calculate affinity score weighted by ranking proximity."""
-    
+
 def identify_coalition_types(self, candidate_1: int, candidate_2: int) -> Dict:
     """Classify the type of coalition: strong, weak, strategic, etc."""
 ```
@@ -108,7 +108,7 @@ async def get_coalition_type_breakdown():
 ```sql
 -- Materialized view for ranking proximity analysis
 CREATE VIEW candidate_pair_proximity AS
-SELECT 
+SELECT
     b1.candidate_id as candidate_1,
     b2.candidate_id as candidate_2,
     b1.BallotID,
@@ -116,7 +116,7 @@ SELECT
     b1.rank_position as rank_1,
     b2.rank_position as rank_2
 FROM ballots_long b1
-JOIN ballots_long b2 ON b1.BallotID = b2.BallotID 
+JOIN ballots_long b2 ON b1.BallotID = b2.BallotID
     AND b1.candidate_id < b2.candidate_id;
 
 -- Index for performance

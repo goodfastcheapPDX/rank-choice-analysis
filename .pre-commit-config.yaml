@@ -1,0 +1,64 @@
+# Pre-commit configuration for ranked-elections-analyzer
+# See https://pre-commit.com for more information
+
+repos:
+  # Built-in hooks for file hygiene
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ['--maxkb=1000']  # Prevent files larger than 1MB
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: mixed-line-ending
+
+  # Python code formatting
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+        language_version: python3
+        args: [--line-length=88]
+
+  # Python import sorting
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args: [--profile=black, --line-length=88]
+
+  # Python linting
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.1.1
+    hooks:
+      - id: flake8
+        args: [--max-line-length=88, --extend-ignore=E203,W503]
+
+  # Security linting
+  - repo: https://github.com/pycqa/bandit
+    rev: 1.7.10
+    hooks:
+      - id: bandit
+        args: [-c, pyproject.toml]
+        additional_dependencies: ["bandit[toml]"]
+
+  # Fast test suite (local hook)
+  - repo: local
+    hooks:
+      - id: fast-tests
+        name: Fast Test Suite
+        entry: python -m pytest tests/unit -v --tb=short
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: election-specific-hooks
+        name: Election-Specific Validation
+        entry: python scripts/pre_commit_hooks.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]

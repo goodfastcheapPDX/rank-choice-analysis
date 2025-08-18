@@ -10,7 +10,7 @@
         gap: 1rem;
         margin-bottom: 2rem;
     }
-    
+
     .candidate-card {
         background: white;
         border-radius: 8px;
@@ -19,35 +19,35 @@
         transition: transform 0.2s, box-shadow 0.2s;
         cursor: pointer;
     }
-    
+
     .candidate-card:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 8px rgba(0,0,0,0.15);
     }
-    
+
     .candidate-name {
         font-size: 1.1rem;
         font-weight: bold;
         color: #2c3e50;
         margin-bottom: 0.5rem;
     }
-    
+
     .metric-row {
         display: flex;
         justify-content: space-between;
         margin-bottom: 0.3rem;
         font-size: 0.9rem;
     }
-    
+
     .metric-label {
         color: #7f8c8d;
     }
-    
+
     .metric-value {
         font-weight: 600;
         color: #2c3e50;
     }
-    
+
     .candidate-detail {
         display: none;
         background: white;
@@ -56,7 +56,7 @@
         margin-top: 2rem;
         box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
-    
+
     .detail-header {
         display: flex;
         justify-content: between;
@@ -65,13 +65,13 @@
         border-bottom: 2px solid #ecf0f1;
         padding-bottom: 1rem;
     }
-    
+
     .detail-title {
         font-size: 1.8rem;
         color: #2c3e50;
         margin: 0;
     }
-    
+
     .close-detail {
         background: #e74c3c;
         color: white;
@@ -81,34 +81,34 @@
         cursor: pointer;
         margin-left: auto;
     }
-    
+
     .metrics-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
         gap: 1.5rem;
         margin-bottom: 2rem;
     }
-    
+
     .metric-card {
         background: #f8f9fa;
         padding: 1rem;
         border-radius: 6px;
         text-align: center;
     }
-    
+
     .metric-number {
         font-size: 1.8rem;
         font-weight: bold;
         color: #3498db;
         display: block;
     }
-    
+
     .metric-description {
         font-size: 0.85rem;
         color: #7f8c8d;
         margin-top: 0.5rem;
     }
-    
+
     .chart-container {
         background: white;
         padding: 1rem;
@@ -116,13 +116,13 @@
         margin-bottom: 1.5rem;
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
-    
+
     .tabs {
         display: flex;
         border-bottom: 2px solid #ecf0f1;
         margin-bottom: 1.5rem;
     }
-    
+
     .tab {
         padding: 0.75rem 1.5rem;
         background: none;
@@ -132,27 +132,27 @@
         color: #7f8c8d;
         transition: color 0.3s;
     }
-    
+
     .tab.active {
         color: #3498db;
         border-bottom: 2px solid #3498db;
     }
-    
+
     .tab-content {
         display: none;
     }
-    
+
     .tab-content.active {
         display: block;
     }
-    
+
     .comparison-section {
         background: #f8f9fa;
         padding: 1.5rem;
         border-radius: 6px;
         margin-top: 1.5rem;
     }
-    
+
     .filters {
         background: white;
         padding: 1rem;
@@ -160,26 +160,26 @@
         margin-bottom: 2rem;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    
+
     .filter-row {
         display: flex;
         gap: 1rem;
         align-items: center;
         flex-wrap: wrap;
     }
-    
+
     .filter-group {
         display: flex;
         flex-direction: column;
         gap: 0.3rem;
     }
-    
+
     .filter-label {
         font-size: 0.9rem;
         font-weight: 600;
         color: #2c3e50;
     }
-    
+
     .loading-overlay {
         position: fixed;
         top: 0;
@@ -192,14 +192,14 @@
         align-items: center;
         z-index: 1000;
     }
-    
+
     .loading-content {
         background: white;
         padding: 2rem;
         border-radius: 8px;
         text-align: center;
     }
-    
+
     .winner-badge {
         background: linear-gradient(135deg, #27ae60, #2ecc71);
         color: white;
@@ -209,7 +209,7 @@
         font-weight: bold;
         margin-left: 0.5rem;
     }
-    
+
     .strength-bar {
         width: 100%;
         height: 8px;
@@ -218,13 +218,13 @@
         overflow: hidden;
         margin-top: 0.3rem;
     }
-    
+
     .strength-fill {
         height: 100%;
         background: linear-gradient(90deg, #e74c3c, #f39c12, #27ae60);
         transition: width 0.3s ease;
     }
-    
+
     /* Metrics Explainer Modal Styles */
     .metrics-explainer {
         position: fixed;
@@ -239,7 +239,7 @@
         justify-content: center;
         padding: 20px;
     }
-    
+
     .explainer-content {
         background: white;
         border-radius: 12px;
@@ -248,7 +248,7 @@
         overflow-y: auto;
         position: relative;
     }
-    
+
     .explainer-header {
         background: #3498db;
         color: white;
@@ -258,7 +258,7 @@
         top: 0;
         z-index: 1;
     }
-    
+
     .explainer-title {
         font-size: 1.5rem;
         margin: 0;
@@ -266,7 +266,7 @@
         align-items: center;
         gap: 1rem;
     }
-    
+
     .close-explainer {
         background: none;
         border: none;
@@ -278,22 +278,22 @@
         border-radius: 4px;
         transition: background-color 0.3s;
     }
-    
+
     .close-explainer:hover {
         background: rgba(255,255,255,0.2);
     }
-    
+
     .explainer-body {
         padding: 2rem;
     }
-    
+
     .metric-explanation {
         margin-bottom: 2.5rem;
         border: 1px solid #ecf0f1;
         border-radius: 8px;
         overflow: hidden;
     }
-    
+
     .metric-header {
         background: #f8f9fa;
         padding: 1rem 1.5rem;
@@ -304,40 +304,40 @@
         align-items: center;
         transition: background-color 0.3s;
     }
-    
+
     .metric-header:hover {
         background: #e9ecef;
     }
-    
+
     .metric-header.active {
         background: #3498db;
         color: white;
     }
-    
+
     .metric-title {
         font-size: 1.1rem;
         font-weight: bold;
         margin: 0;
     }
-    
+
     .metric-toggle {
         font-size: 1.2rem;
         transition: transform 0.3s;
     }
-    
+
     .metric-toggle.active {
         transform: rotate(180deg);
     }
-    
+
     .metric-content {
         display: none;
         padding: 1.5rem;
     }
-    
+
     .metric-content.active {
         display: block;
     }
-    
+
     .eli5-section {
         background: #e8f5e8;
         padding: 1rem;
@@ -345,14 +345,14 @@
         margin-bottom: 1rem;
         border-left: 4px solid #27ae60;
     }
-    
+
     .eli5-title {
         color: #27ae60;
         font-weight: bold;
         margin-bottom: 0.5rem;
         font-size: 0.9rem;
     }
-    
+
     .algorithm-section {
         background: #f0f4ff;
         padding: 1rem;
@@ -360,28 +360,28 @@
         margin-bottom: 1rem;
         border-left: 4px solid #3498db;
     }
-    
+
     .algorithm-title {
         color: #3498db;
         font-weight: bold;
         margin-bottom: 0.5rem;
         font-size: 0.9rem;
     }
-    
+
     .example-section {
         background: #fff7e6;
         padding: 1rem;
         border-radius: 6px;
         border-left: 4px solid #f39c12;
     }
-    
+
     .example-title {
         color: #f39c12;
         font-weight: bold;
         margin-bottom: 0.5rem;
         font-size: 0.9rem;
     }
-    
+
     .scale-visualization {
         background: #f8f9fa;
         padding: 1rem;
@@ -389,7 +389,7 @@
         margin: 1rem 0;
         text-align: center;
     }
-    
+
     .scale-bar {
         width: 100%;
         height: 20px;
@@ -397,14 +397,14 @@
         border-radius: 10px;
         margin: 0.5rem 0;
     }
-    
+
     .scale-labels {
         display: flex;
         justify-content: space-between;
         font-size: 0.8rem;
         color: #7f8c8d;
     }
-    
+
     .help-icon {
         background: #3498db;
         color: white;
@@ -418,11 +418,11 @@
         margin-left: 0.5rem;
         transition: background-color 0.3s;
     }
-    
+
     .help-icon:hover {
         background: #2980b9;
     }
-    
+
     .metrics-help-button {
         background: #27ae60;
         color: white;
@@ -434,7 +434,7 @@
         margin-left: 1rem;
         transition: background-color 0.3s;
     }
-    
+
     .metrics-help-button:hover {
         background: #229954;
     }
@@ -472,7 +472,7 @@
         <button class="metrics-help-button" onclick="openMetricsExplainer()">📊 Explain Metrics</button>
     </h2>
     <p>Explore comprehensive analytics for each candidate including vote strength, cross-camp appeal, transfer efficiency, and supporter behavior patterns. Click any candidate card for detailed analysis.</p>
-    
+
     <div id="candidatesGrid" class="candidate-grid">
         <div class="loading">Loading candidates...</div>
     </div>
@@ -483,7 +483,7 @@
         <h2 id="detailTitle" class="detail-title"></h2>
         <button class="close-detail" onclick="closeDetail()">Close</button>
     </div>
-    
+
     <div class="tabs">
         <button class="tab active" onclick="switchTab('overview')">Overview</button>
         <button class="tab" onclick="switchTab('supporters')">Supporters</button>
@@ -494,77 +494,77 @@
         <button class="tab" onclick="switchTab('coalitions')">Coalitions</button>
         <button class="tab" onclick="switchTab('comparison')">Compare</button>
     </div>
-    
+
     <div id="overviewTab" class="tab-content active">
         <div id="overviewMetrics" class="metrics-grid">
             <!-- Metrics will be populated here -->
         </div>
-        
+
         <div class="chart-container">
             <h3>Vote Strength Breakdown</h3>
             <div id="strengthChart"></div>
         </div>
     </div>
-    
+
     <div id="supportersTab" class="tab-content">
         <div class="chart-container">
             <h3>Supporter Behavior Analysis</h3>
             <div id="supporterChart"></div>
         </div>
-        
+
         <div class="chart-container">
             <h3>Ranking Distribution</h3>
             <div id="rankingChart"></div>
         </div>
     </div>
-    
+
     <div id="transfersTab" class="tab-content">
         <div class="chart-container">
             <h3>Vote Transfer Efficiency</h3>
             <div id="transferChart"></div>
         </div>
-        
+
         <div class="chart-container">
             <h3>Top Transfer Destinations</h3>
             <div id="transferDestinationsChart"></div>
         </div>
     </div>
-    
+
     <div id="ballotJourneyTab" class="tab-content">
         <div class="chart-container">
             <h3>Ballot Flow Analysis</h3>
             <div id="ballotFlowChart"></div>
         </div>
-        
+
         <div class="chart-container">
             <h3>Transfer Destinations</h3>
             <div id="transferDestinationsAnalysis"></div>
         </div>
-        
+
         <div class="chart-container">
             <h3>Vote Retention Analysis</h3>
             <div id="retentionAnalysis"></div>
         </div>
     </div>
-    
+
     <div id="progressionTab" class="tab-content">
         <div class="chart-container">
             <h3>Round-by-Round Vote Progression</h3>
             <div id="roundProgressionChart"></div>
         </div>
-        
+
         <div class="chart-container">
             <h3>Transfer Flow Details</h3>
             <div id="transferFlowDetails"></div>
         </div>
     </div>
-    
+
     <div id="similarityTab" class="tab-content">
         <div class="chart-container">
             <h3>Most Similar Candidates</h3>
             <div id="similarCandidatesChart"></div>
         </div>
-        
+
         <div class="chart-container">
             <h3>Supporter Archetype Comparison</h3>
             <div id="archetypeComparisonChart"></div>
@@ -576,18 +576,18 @@
             <h3>Network Centrality Analysis</h3>
             <div id="centralityAnalysis"></div>
         </div>
-        
+
         <div class="chart-container">
             <h3>Coalition Partners</h3>
             <div id="coalitionChart"></div>
         </div>
-        
+
         <div class="chart-container">
             <h3>Network Insights</h3>
             <div id="networkInsights"></div>
         </div>
     </div>
-    
+
     <div id="comparisonTab" class="tab-content">
         <div class="comparison-section">
             <h3>Compare with Another Candidate</h3>
@@ -600,7 +600,7 @@
                 </div>
                 <button class="btn" onclick="performComparison()">Compare</button>
             </div>
-            
+
             <div id="comparisonResults" style="margin-top: 1rem;">
                 <!-- Comparison results will appear here -->
             </div>
@@ -623,10 +623,10 @@
                 <button class="close-explainer" onclick="closeMetricsExplainer()">×</button>
             </h2>
         </div>
-        
+
         <div class="explainer-body">
             <p style="margin-bottom: 2rem; color: #7f8c8d; font-style: italic;">
-                These advanced metrics help us understand not just <em>how many</em> votes each candidate got, 
+                These advanced metrics help us understand not just <em>how many</em> votes each candidate got,
                 but <em>how voters felt</em> about them and <em>how their support behaved</em> during the election.
                 Click any metric below to learn more!
             </p>
@@ -643,7 +643,7 @@
                         <p>Imagine you're asking kids to rank their favorite ice cream flavors. If a flavor gets picked as #1 by lots of kids, that's stronger than getting picked as #5 by the same number. Vote Strength measures how much voters <strong>really, really liked</strong> a candidate vs. just thinking they were "okay."</p>
                         <p><strong>Other ways to think about it:</strong> Enthusiasm Score, Preference Intensity, How Much Voters Really Wanted This Person</p>
                     </div>
-                    
+
                     <div class="scale-visualization">
                         <div class="scale-bar"></div>
                         <div class="scale-labels">
@@ -652,7 +652,7 @@
                             <span>High (80%+)<br>Mostly high rankings</span>
                         </div>
                     </div>
-                    
+
                     <div class="algorithm-section">
                         <div class="algorithm-title">🔢 How We Calculate It</div>
                         <p><strong>Step 1:</strong> Give points for each ranking (1st place = 6 points, 2nd = 5 points, 3rd = 4 points, etc.)</p>
@@ -660,7 +660,7 @@
                         <p><strong>Step 3:</strong> Divide by the maximum possible points (if everyone ranked them 1st)</p>
                         <p><strong>Formula:</strong> (Total Points Earned) ÷ (Maximum Possible Points) = Vote Strength</p>
                     </div>
-                    
+
                     <div class="example-section">
                         <div class="example-title">📝 Examples</div>
                         <p><strong>HIGH Strength (91%):</strong> Gets 1000 first-choice, 500 second-choice, 200 third-choice
@@ -686,11 +686,11 @@
                         <p>Some candidates only appeal to people who think exactly like them. Others can win over people with different opinions. Cross-Camp Appeal measures how good a candidate is at <strong>bringing different types of voters together</strong> instead of just preaching to the choir.</p>
                         <p><strong>Other ways to think about it:</strong> Bridge-Builder Score, Coalition Builder, How Well They Unite Different Groups</p>
                     </div>
-                    
+
                     <div style="background: #fff3cd; padding: 1rem; border-radius: 6px; margin: 1rem 0; border-left: 4px solid #f39c12;">
                         <p><strong>⚠️ Current Limitation:</strong> This metric currently shows 0% for all candidates because we don't yet have a way to categorize candidates into political groups (progressive, moderate, conservative, etc.). The algorithm is designed but needs candidate ideology data to work properly.</p>
                     </div>
-                    
+
                     <div class="scale-visualization">
                         <div class="scale-bar"></div>
                         <div class="scale-labels">
@@ -699,7 +699,7 @@
                             <span>High (80%+)<br>Unites diverse voters</span>
                         </div>
                     </div>
-                    
+
                     <div class="algorithm-section">
                         <div class="algorithm-title">🔢 How We Calculate It (Future Implementation)</div>
                         <p><strong>Step 1:</strong> Categorize all candidates into ideological groups (progressive, moderate, conservative)</p>
@@ -708,7 +708,7 @@
                         <p><strong>Formula:</strong> (Average Ideological Groups Ranked - 1) ÷ (Max Possible Groups - 1)</p>
                         <p><strong>Data Needed:</strong> Manual candidate categorization or political endorsement analysis</p>
                     </div>
-                    
+
                     <div class="example-section">
                         <div class="example-title">📝 Examples (When Implemented)</div>
                         <p><strong>High Cross-Camp (80%):</strong> Progressive candidate whose supporters also rank moderates and some conservatives - appeals across ideological lines</p>
@@ -730,7 +730,7 @@
                         <p>In ranked-choice voting, if your favorite candidate can't win, your vote goes to your next choice. Transfer Efficiency measures <strong>how ready a candidate's supporters are</strong> to have their votes help someone else if needed.</p>
                         <p><strong>Other ways to think about it:</strong> Backup Plan Score, How Well Supporters Prepare for Plan B, Vote Recycling Rate</p>
                     </div>
-                    
+
                     <div class="scale-visualization">
                         <div class="scale-bar"></div>
                         <div class="scale-labels">
@@ -739,7 +739,7 @@
                             <span>High (90%+)<br>Lots of backup choices</span>
                         </div>
                     </div>
-                    
+
                     <div class="algorithm-section">
                         <div class="algorithm-title">🔢 How We Calculate It</div>
                         <p><strong>Step 1:</strong> Count voters who ranked this candidate</p>
@@ -747,14 +747,14 @@
                         <p><strong>Step 3:</strong> Percentage with backup choices = Transfer Efficiency</p>
                         <p><strong>Formula:</strong> (Voters with Next Choices) ÷ (Total Voters) = Transfer Efficiency</p>
                     </div>
-                    
+
                     <div class="example-section">
                         <div class="example-title">📝 Examples</div>
                         <p><strong>HIGH Efficiency (85%):</strong> Candidate B has 1000 supporters
                         <br>• 850 voters ranked other candidates after B (good backup plans)
                         <br>• 150 voters only ranked B
                         <br>• Result: 850 ÷ 1000 = 85% can transfer</p>
-                        <p><strong>LOW Efficiency (25%):</strong> Candidate C has 1000 supporters  
+                        <p><strong>LOW Efficiency (25%):</strong> Candidate C has 1000 supporters
                         <br>• 250 voters ranked other candidates after C (few backup plans)
                         <br>• 750 voters only ranked C (bullet voting)
                         <br>• Result: 250 ÷ 1000 = 25% can transfer</p>
@@ -775,7 +775,7 @@
                         <p>Some candidates get ranked in the same position by most of their supporters (very consistent). Others get scattered all over different rankings. Ranking Consistency measures <strong>how much voters agree</strong> about where this candidate belongs on their ballot.</p>
                         <p><strong>Other ways to think about it:</strong> Voter Agreement Score, How Sure People Are About This Candidate, Clarity of Opinion</p>
                     </div>
-                    
+
                     <div class="scale-visualization">
                         <div class="scale-bar"></div>
                         <div class="scale-labels">
@@ -784,7 +784,7 @@
                             <span>High (80%+)<br>Strong agreement</span>
                         </div>
                     </div>
-                    
+
                     <div class="algorithm-section">
                         <div class="algorithm-title">🔢 How We Calculate It</div>
                         <p><strong>Step 1:</strong> Look at which ranking positions this candidate received (1st, 2nd, 3rd, etc.)</p>
@@ -793,19 +793,19 @@
                         <br>• Low entropy = very organized (most votes in 1-2 positions)
                         <br>• High entropy = very random (votes scattered across all positions)</p>
                         <p><strong>Step 3:</strong> Convert entropy to consistency score</p>
-                        <p><strong>Formula:</strong> 
+                        <p><strong>Formula:</strong>
                         <br>• Entropy = -Σ(p × log₂(p)) for each ranking position percentage
                         <br>• Consistency = 1 - (Entropy ÷ Maximum Possible Entropy)
                         <br>• Result: 0% = scattered everywhere, 100% = all in one position</p>
                     </div>
-                    
+
                     <div class="example-section">
                         <div class="example-title">📝 Examples</div>
                         <p><strong>HIGH Consistency (89%):</strong> 90% rank candidate #1, 10% rank #2
                         <br>• Very low entropy - almost everyone agrees
                         <br>• Clear consensus on candidate's position</p>
                         <p><strong>LOW Consistency (15%):</strong> 20% rank #1, 18% rank #2, 17% rank #3, 15% rank #4, 16% rank #5, 14% rank #6
-                        <br>• Very high entropy - votes scattered everywhere  
+                        <br>• Very high entropy - votes scattered everywhere
                         <br>• No consensus on where candidate belongs</p>
                         <p><strong>This shows:</strong> High consistency = voters agree about the candidate; Low consistency = voters very confused/divided</p>
                     </div>
@@ -824,7 +824,7 @@
                         <p>Some candidates make people say "YES! I love them!" or "NO! I hate them!" Others make people say "Eh, they're okay." Polarization measures how much this candidate makes voters feel <strong>very strongly</strong> one way or another, instead of just being "meh."</p>
                         <p><strong>Other ways to think about it:</strong> Controversy Score, How Much People Have Strong Feelings, Love-or-Hate Factor</p>
                     </div>
-                    
+
                     <div class="scale-visualization">
                         <div class="scale-bar"></div>
                         <div class="scale-labels">
@@ -833,20 +833,20 @@
                             <span>High (70%+)<br>Very divisive</span>
                         </div>
                     </div>
-                    
+
                     <div class="algorithm-section">
                         <div class="algorithm-title">🔢 How We Calculate It</div>
                         <p><strong>Step 1:</strong> Count "bullet voters" (people who ONLY ranked this candidate) - shows passionate exclusive support</p>
                         <p><strong>Step 2:</strong> Count extreme ranking patterns - voters who rank them #1 or #6 (strong love/hate)</p>
                         <p><strong>Step 3:</strong> Analyze ranking distribution spread - concentrated at extremes vs. middle positions</p>
                         <p><strong>Step 4:</strong> Calculate ratio of extreme positions to moderate positions</p>
-                        <p><strong>Complete Formula:</strong> 
+                        <p><strong>Complete Formula:</strong>
                         <br>• Base Score = (Bullet Voters ÷ Total Voters)
                         <br>• Extreme Bonus = (Rank 1 + Rank 6 votes) ÷ (All Rankings) - 0.33 baseline
                         <br>• Final Score = Base Score + max(0, Extreme Bonus)</p>
                         <p><strong>Why it works:</strong> Both "only vote for them" and "rank them at extremes" indicate strong emotional responses</p>
                     </div>
-                    
+
                     <div class="example-section">
                         <div class="example-title">📝 Examples</div>
                         <p><strong>HIGH Polarization (68%):</strong> Candidate causes strong reactions
@@ -855,7 +855,7 @@
                         <br>• Very few rank them #3, #4, #5 - no middle ground</p>
                         <p><strong>LOW Polarization (8%):</strong> Candidate is broadly acceptable
                         <br>• 2% bullet vote - few passionate exclusive supporters
-                        <br>• Rankings spread across #2, #3, #4 positions - seen as "fine"  
+                        <br>• Rankings spread across #2, #3, #4 positions - seen as "fine"
                         <br>• Rarely ranked #1 or #6 - not inspiring strong feelings</p>
                         <p><strong>This shows:</strong> High polarization = "love or hate"; Low polarization = "safe consensus choice"</p>
                     </div>
@@ -874,7 +874,7 @@
                         <p>When a candidate's votes transfer to others, do they mostly go to a few similar candidates (concentrated) or spread out to many different ones (dispersed)? This tells us <strong>how unified</strong> the candidate's supporters are in their backup choices.</p>
                         <p><strong>Other ways to think about it:</strong> Backup Plan Unity, Where the Votes Go Next, Coalition Tightness</p>
                     </div>
-                    
+
                     <div class="algorithm-section">
                         <div class="algorithm-title">🔢 How We Calculate It</div>
                         <p><strong>Concentrated:</strong> >50% of transfers go to top destination, or ≤3 major destinations</p>
@@ -883,16 +883,16 @@
                         <p><strong>Analysis:</strong> Count transfer destinations and calculate distribution patterns based on vote counts, not ideology</p>
                         <p><strong>Note:</strong> This is purely mathematical - we don't categorize candidates by political ideology</p>
                     </div>
-                    
+
                     <div class="example-section">
                         <div class="example-title">📝 Examples</div>
                         <p><strong>CONCENTRATED Pattern:</strong> Candidate X's supporters have clear favorites
-                        <br>• 60% transfer to Candidate A, 25% to Candidate B  
+                        <br>• 60% transfer to Candidate A, 25% to Candidate B
                         <br>• Only 15% scattered among other candidates
                         <br>• Shows unified coalition with shared preferences</p>
                         <p><strong>DISPERSED Pattern:</strong> Candidate Y's supporters spread out widely
                         <br>• Transfers go 15% each to 6 different candidates
-                        <br>• No candidate gets more than 18% of transfers  
+                        <br>• No candidate gets more than 18% of transfers
                         <br>• Shows diverse coalition with different backup priorities</p>
                         <p><strong>This shows:</strong> Concentrated = supporters think alike; Dispersed = supporters have very different politics</p>
                     </div>
@@ -918,23 +918,23 @@ async function loadCandidates() {
         renderCandidatesGrid(allCandidates);
         populateCompareDropdown();
     } catch (error) {
-        document.getElementById('candidatesGrid').innerHTML = 
+        document.getElementById('candidatesGrid').innerHTML =
             '<div class="error">Failed to load candidates: ' + error.message + '</div>';
     }
 }
 
 function renderCandidatesGrid(candidates) {
     const grid = document.getElementById('candidatesGrid');
-    
+
     if (candidates.length === 0) {
         grid.innerHTML = '<div class="loading">No candidates found</div>';
         return;
     }
-    
+
     grid.innerHTML = candidates.map(candidate => {
         const isWinner = winners.includes(candidate.candidate_id);
         const winnerBadge = isWinner ? '<span class="winner-badge">WINNER</span>' : '';
-        
+
         return `
             <div class="candidate-card" onclick="showCandidateDetail(${candidate.candidate_id})">
                 <div class="candidate-name">
@@ -978,7 +978,7 @@ function sortCandidates() {
 function filterCandidates() {
     const filterBy = document.getElementById('filterBy').value;
     let filtered = allCandidates;
-    
+
     switch (filterBy) {
         case 'winners':
             filtered = allCandidates.filter(c => winners.includes(c.candidate_id));
@@ -990,7 +990,7 @@ function filterCandidates() {
             filtered = allCandidates.filter(c => c.cross_camp_appeal > 0.3);
             break;
     }
-    
+
     renderCandidatesGrid(filtered);
 }
 
@@ -1002,13 +1002,13 @@ function resetView() {
 
 async function showCandidateDetail(candidateId) {
     document.getElementById('loadingOverlay').style.display = 'flex';
-    
+
     try {
         const profile = await fetchData(`/api/candidates/${candidateId}/profile`);
         currentCandidate = profile;
-        
+
         document.getElementById('detailTitle').textContent = profile.candidate_name;
-        
+
         renderOverviewTab(profile);
         await loadSupportersTab(candidateId);
         await loadTransfersTab(candidateId);
@@ -1016,10 +1016,10 @@ async function showCandidateDetail(candidateId) {
         await loadProgressionTab(candidateId);
         await loadSimilarityTab(candidateId);
         await loadCoalitionsTab(candidateId);
-        
+
         document.getElementById('candidateDetail').style.display = 'block';
         document.getElementById('candidateDetail').scrollIntoView({ behavior: 'smooth' });
-        
+
     } catch (error) {
         alert('Failed to load candidate details: ' + error.message);
     } finally {
@@ -1030,7 +1030,7 @@ async function showCandidateDetail(candidateId) {
 function renderOverviewTab(profile) {
     const isWinner = winners.includes(profile.candidate_id);
     const demographics = profile.supporter_demographics || {};
-    
+
     document.getElementById('overviewMetrics').innerHTML = `
         <div class="metric-card">
             <span class="metric-number">${profile.first_choice_votes.toLocaleString()}</span>
@@ -1075,7 +1075,7 @@ function renderOverviewTab(profile) {
             <div class="metric-description">${isWinner ? 'Elected to City Council' : 'Eliminated during tabulation'}</div>
         </div>
     `;
-    
+
     // Create strength breakdown chart
     const strengthData = [{
         x: ['Vote Strength', 'Cross-Camp Appeal', 'Transfer Efficiency', 'Ranking Consistency'],
@@ -1088,7 +1088,7 @@ function renderOverviewTab(profile) {
         type: 'bar',
         marker: { color: ['#3498db', '#e74c3c', '#f39c12', '#27ae60'] }
     }];
-    
+
     Plotly.newPlot('strengthChart', strengthData, {
         title: 'Advanced Metrics Comparison (%)',
         xaxis: { title: 'Metric' },
@@ -1100,7 +1100,7 @@ async function loadSupportersTab(candidateId) {
     try {
         const supporters = await fetchData(`/api/candidates/${candidateId}/supporters`);
         const segmentation = await fetchData(`/api/candidates/${candidateId}/supporter-segments`);
-        
+
         // Ranking distribution chart
         const rankingData = Object.entries(supporters.ranking_distribution || {});
         const rankChart = [{
@@ -1109,13 +1109,13 @@ async function loadSupportersTab(candidateId) {
             type: 'bar',
             marker: { color: '#3498db' }
         }];
-        
+
         Plotly.newPlot('rankingChart', rankChart, {
             title: 'Where Voters Ranked This Candidate',
             xaxis: { title: 'Ranking Position' },
             yaxis: { title: 'Number of Votes' }
         });
-        
+
         // Enhanced supporter behavior with archetypes
         let archetypeCards = '';
         if (segmentation.archetypes && segmentation.archetypes.length > 0) {
@@ -1131,7 +1131,7 @@ async function loadSupportersTab(candidateId) {
                 </div>
             `).join('');
         }
-        
+
         document.getElementById('supporterChart').innerHTML = `
             <div class="metrics-grid">
                 <div class="metric-card">
@@ -1154,7 +1154,7 @@ async function loadSupportersTab(candidateId) {
                 </div>
                 ${archetypeCards}
             </div>
-            
+
             ${segmentation.preference_patterns && segmentation.preference_patterns.most_common_coranked ? `
                 <div style="margin-top: 2rem;">
                     <h4>Most Commonly Co-Ranked Candidates</h4>
@@ -1170,9 +1170,9 @@ async function loadSupportersTab(candidateId) {
                 </div>
             ` : ''}
         `;
-        
+
     } catch (error) {
-        document.getElementById('supporterChart').innerHTML = 
+        document.getElementById('supporterChart').innerHTML =
             '<div class="error">Failed to load supporter data: ' + error.message + '</div>';
     }
 }
@@ -1180,7 +1180,7 @@ async function loadSupportersTab(candidateId) {
 async function loadTransfersTab(candidateId) {
     try {
         const transfers = await fetchData(`/api/candidates/${candidateId}/transfers`);
-        
+
         // Transfer efficiency overview
         document.getElementById('transferChart').innerHTML = `
             <div class="metrics-grid">
@@ -1209,7 +1209,7 @@ async function loadTransfersTab(candidateId) {
                 </div>
             </div>
         `;
-        
+
         // Transfer destinations chart
         if (transfers.top_transfer_destinations && transfers.top_transfer_destinations.length > 0) {
             const destData = [{
@@ -1218,19 +1218,19 @@ async function loadTransfersTab(candidateId) {
                 type: 'bar',
                 marker: { color: '#27ae60' }
             }];
-            
+
             Plotly.newPlot('transferDestinationsChart', destData, {
                 title: 'Where This Candidate\'s Votes Transfer',
                 xaxis: { title: 'Destination Candidate' },
                 yaxis: { title: 'Votes Transferred' }
             });
         } else {
-            document.getElementById('transferDestinationsChart').innerHTML = 
+            document.getElementById('transferDestinationsChart').innerHTML =
                 '<div class="loading">No transfer data available</div>';
         }
-        
+
     } catch (error) {
-        document.getElementById('transferChart').innerHTML = 
+        document.getElementById('transferChart').innerHTML =
             '<div class="error">Failed to load transfer data: ' + error.message + '</div>';
     }
 }
@@ -1239,7 +1239,7 @@ async function loadCoalitionsTab(candidateId) {
     try {
         // Load centrality analysis
         const centralityData = await fetchData(`/api/candidates/${candidateId}/coalition-centrality`);
-        
+
         // Display centrality metrics
         if (centralityData && !centralityData.error) {
             const metrics = centralityData.influence_metrics;
@@ -1277,7 +1277,7 @@ async function loadCoalitionsTab(candidateId) {
                     </div>
                 </div>
             `;
-            
+
             // Display coalition partners chart
             if (centralityData.coalition_connections && centralityData.coalition_connections.length > 0) {
                 const coalitionData = [{
@@ -1288,41 +1288,41 @@ async function loadCoalitionsTab(candidateId) {
                     text: centralityData.coalition_connections.map(c => `${c.shared_ballots} ballots`),
                     textposition: 'auto'
                 }];
-                
+
                 Plotly.newPlot('coalitionChart', coalitionData, {
                     title: 'Coalition Partners by Strength',
                     xaxis: { title: 'Coalition Partner' },
                     yaxis: { title: 'Coalition Strength Score' }
                 });
             } else {
-                document.getElementById('coalitionChart').innerHTML = 
+                document.getElementById('coalitionChart').innerHTML =
                     '<div class="loading">No coalition partners found</div>';
             }
-            
+
             // Display network insights
             if (centralityData.network_insights && centralityData.network_insights.length > 0) {
                 document.getElementById('networkInsights').innerHTML = `
                     <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 6px;">
                         <h4 style="margin-top: 0; color: #2c3e50;">Network Analysis Insights</h4>
                         <ul style="margin: 0; padding-left: 1.5rem;">
-                            ${centralityData.network_insights.map(insight => 
+                            ${centralityData.network_insights.map(insight =>
                                 `<li style="margin-bottom: 0.5rem; color: #5d6d7e;">${insight}</li>`
                             ).join('')}
                         </ul>
                     </div>
                 `;
             } else {
-                document.getElementById('networkInsights').innerHTML = 
+                document.getElementById('networkInsights').innerHTML =
                     '<div class="loading">No network insights available</div>';
             }
-            
+
         } else {
-            document.getElementById('centralityAnalysis').innerHTML = 
+            document.getElementById('centralityAnalysis').innerHTML =
                 '<div class="error">Failed to load centrality data</div>';
         }
-        
+
     } catch (error) {
-        document.getElementById('centralityAnalysis').innerHTML = 
+        document.getElementById('centralityAnalysis').innerHTML =
             '<div class="error">Failed to load coalition data: ' + error.message + '</div>';
     }
 }
@@ -1330,7 +1330,7 @@ async function loadCoalitionsTab(candidateId) {
 function populateCompareDropdown() {
     const select = document.getElementById('compareCandidate');
     select.innerHTML = '<option value="">Choose a candidate...</option>' +
-        allCandidates.map(c => 
+        allCandidates.map(c =>
             `<option value="${c.candidate_id}">${c.candidate_name}</option>`
         ).join('');
 }
@@ -1341,10 +1341,10 @@ async function performComparison() {
         alert('Please select a candidate to compare');
         return;
     }
-    
+
     try {
         const comparison = await fetchData(`/api/candidates/${currentCandidate.candidate_id}/comparison/${otherCandidateId}`);
-        
+
         document.getElementById('comparisonResults').innerHTML = `
             <div class="metrics-grid">
                 <div class="metric-card">
@@ -1367,9 +1367,9 @@ async function performComparison() {
                 </div>
             </div>
         `;
-        
+
     } catch (error) {
-        document.getElementById('comparisonResults').innerHTML = 
+        document.getElementById('comparisonResults').innerHTML =
             '<div class="error">Failed to load comparison: ' + error.message + '</div>';
     }
 }
@@ -1379,15 +1379,15 @@ function switchTab(tabName) {
     document.querySelectorAll('.tab-content').forEach(tab => {
         tab.classList.remove('active');
     });
-    
+
     // Remove active class from all tabs
     document.querySelectorAll('.tab').forEach(tab => {
         tab.classList.remove('active');
     });
-    
+
     // Show selected tab content
     document.getElementById(tabName + 'Tab').classList.add('active');
-    
+
     // Add active class to clicked tab
     event.target.classList.add('active');
 }
@@ -1400,7 +1400,7 @@ function closeDetail() {
 async function loadBallotJourneyTab(candidateId) {
     try {
         const journeyData = await fetchData(`/api/candidates/${candidateId}/ballot-journey`);
-        
+
         // Ballot Flow Chart - showing transfer destinations
         if (journeyData.transfer_patterns && journeyData.transfer_patterns.length > 0) {
             const flowData = [{
@@ -1411,17 +1411,17 @@ async function loadBallotJourneyTab(candidateId) {
                 text: journeyData.transfer_patterns.map(p => `${p.transfer_votes} votes`),
                 textposition: 'auto'
             }];
-            
+
             Plotly.newPlot('ballotFlowChart', flowData, {
                 title: 'Where This Candidate\'s Supporters\' Votes Would Transfer',
                 xaxis: { title: 'Destination Candidate' },
                 yaxis: { title: 'Number of Votes' }
             });
         } else {
-            document.getElementById('ballotFlowChart').innerHTML = 
+            document.getElementById('ballotFlowChart').innerHTML =
                 '<div class="loading">No transfer patterns available for this candidate</div>';
         }
-        
+
         // Transfer Destinations Analysis
         if (journeyData.transfer_patterns && journeyData.transfer_patterns.length > 0) {
             document.getElementById('transferDestinationsAnalysis').innerHTML = `
@@ -1436,10 +1436,10 @@ async function loadBallotJourneyTab(candidateId) {
                 </div>
             `;
         } else {
-            document.getElementById('transferDestinationsAnalysis').innerHTML = 
+            document.getElementById('transferDestinationsAnalysis').innerHTML =
                 '<div class="loading">No transfer analysis available</div>';
         }
-        
+
         // Retention Analysis
         if (journeyData.retention_analysis) {
             const retention = journeyData.retention_analysis;
@@ -1463,12 +1463,12 @@ async function loadBallotJourneyTab(candidateId) {
                 </div>
             `;
         } else {
-            document.getElementById('retentionAnalysis').innerHTML = 
+            document.getElementById('retentionAnalysis').innerHTML =
                 '<div class="loading">No retention analysis available</div>';
         }
-        
+
     } catch (error) {
-        document.getElementById('ballotFlowChart').innerHTML = 
+        document.getElementById('ballotFlowChart').innerHTML =
             '<div class="error">Failed to load ballot journey data: ' + error.message + '</div>';
     }
 }
@@ -1476,7 +1476,7 @@ async function loadBallotJourneyTab(candidateId) {
 async function loadProgressionTab(candidateId) {
     try {
         const progressionData = await fetchData(`/api/candidates/${candidateId}/round-progression`);
-        
+
         // Round-by-Round Vote Progression Chart
         const roundData = [{
             x: progressionData.round_progression.map(r => `Round ${r.round_number}`),
@@ -1485,12 +1485,12 @@ async function loadProgressionTab(candidateId) {
             mode: 'lines+markers',
             line: { color: '#e74c3c', width: 3 },
             marker: { size: 8 },
-            text: progressionData.round_progression.map(r => 
+            text: progressionData.round_progression.map(r =>
                 `Round ${r.round_number}: ${r.vote_total} votes${r.vote_change !== 0 ? ` (${r.vote_change > 0 ? '+' : ''}${r.vote_change})` : ''}`
             ),
             textposition: 'top center'
         }];
-        
+
         // Add quota line
         if (progressionData.round_progression.length > 0) {
             const quota = progressionData.round_progression[0].quota;
@@ -1505,14 +1505,14 @@ async function loadProgressionTab(candidateId) {
                 hoverinfo: 'text'
             });
         }
-        
+
         Plotly.newPlot('roundProgressionChart', roundData, {
             title: `${progressionData.candidate_name} - Vote Progression Through STV Rounds`,
             xaxis: { title: 'STV Round' },
             yaxis: { title: 'Vote Total' },
             showlegend: true
         });
-        
+
         // Transfer Flow Details
         const transferDetails = progressionData.round_progression
             .filter(r => r.transfers_in.length > 0 || r.transfers_out.length > 0)
@@ -1537,7 +1537,7 @@ async function loadProgressionTab(candidateId) {
                     ${round.is_winner_this_round ? '<div style="color: #27ae60;"><strong>WINNER</strong></div>' : ''}
                 </div>
             `).join('');
-        
+
         if (transferDetails) {
             document.getElementById('transferFlowDetails').innerHTML = `
                 <div class="metrics-grid">
@@ -1545,12 +1545,12 @@ async function loadProgressionTab(candidateId) {
                 </div>
             `;
         } else {
-            document.getElementById('transferFlowDetails').innerHTML = 
+            document.getElementById('transferFlowDetails').innerHTML =
                 '<div class="loading">No transfer activity in any rounds</div>';
         }
-        
+
     } catch (error) {
-        document.getElementById('roundProgressionChart').innerHTML = 
+        document.getElementById('roundProgressionChart').innerHTML =
             '<div class="error">Failed to load progression data: ' + error.message + '</div>';
     }
 }
@@ -1558,7 +1558,7 @@ async function loadProgressionTab(candidateId) {
 async function loadSimilarityTab(candidateId) {
     try {
         const similarityData = await fetchData(`/api/candidates/${candidateId}/similarity`);
-        
+
         // Most Similar Candidates Chart
         if (similarityData.similar_candidates && similarityData.similar_candidates.length > 0) {
             const similarData = [{
@@ -1569,20 +1569,20 @@ async function loadSimilarityTab(candidateId) {
                 text: similarityData.similar_candidates.slice(0, 10).map(c => `${c.similarity_score}%`),
                 textposition: 'auto'
             }];
-            
+
             Plotly.newPlot('similarCandidatesChart', similarData, {
                 title: 'Candidates with Most Similar Supporter Profiles',
                 xaxis: { title: 'Candidate' },
                 yaxis: { title: 'Similarity Score (%)' }
             });
         } else {
-            document.getElementById('similarCandidatesChart').innerHTML = 
+            document.getElementById('similarCandidatesChart').innerHTML =
                 '<div class="loading">No similarity data available</div>';
         }
-        
+
         // Get supporter segmentation for archetype comparison
         const segmentationData = await fetchData(`/api/candidates/${candidateId}/supporter-segments`);
-        
+
         if (segmentationData.archetypes && segmentationData.archetypes.length > 0) {
             const archetypeData = [{
                 values: segmentationData.archetypes.map(a => a.percentage),
@@ -1594,18 +1594,18 @@ async function loadSimilarityTab(candidateId) {
                     colors: ['#e74c3c', '#3498db', '#27ae60', '#f39c12', '#9b59b6']
                 }
             }];
-            
+
             Plotly.newPlot('archetypeComparisonChart', archetypeData, {
                 title: `${similarityData.candidate_name} - Supporter Archetypes`,
                 showlegend: true
             });
         } else {
-            document.getElementById('archetypeComparisonChart').innerHTML = 
+            document.getElementById('archetypeComparisonChart').innerHTML =
                 '<div class="loading">No archetype data available</div>';
         }
-        
+
     } catch (error) {
-        document.getElementById('similarCandidatesChart').innerHTML = 
+        document.getElementById('similarCandidatesChart').innerHTML =
             '<div class="error">Failed to load similarity data: ' + error.message + '</div>';
     }
 }
@@ -1625,7 +1625,7 @@ function toggleMetric(metricName) {
     const content = document.getElementById(metricName + 'Content');
     const header = document.querySelector(`[onclick="toggleMetric('${metricName}')"]`);
     const toggle = document.getElementById(metricName + 'Toggle');
-    
+
     // Close all other metrics first
     document.querySelectorAll('.metric-content').forEach(el => {
         if (el.id !== metricName + 'Content') {
@@ -1643,10 +1643,10 @@ function toggleMetric(metricName) {
             el.textContent = '▼';
         }
     });
-    
+
     // Toggle the clicked metric
     const isActive = content.classList.contains('active');
-    
+
     if (isActive) {
         content.classList.remove('active');
         header.classList.remove('active');
@@ -1664,7 +1664,7 @@ function toggleMetric(metricName) {
 document.addEventListener('click', function(event) {
     const modal = document.getElementById('metricsExplainer');
     const modalContent = document.querySelector('.explainer-content');
-    
+
     if (event.target === modal) {
         closeMetricsExplainer();
     }

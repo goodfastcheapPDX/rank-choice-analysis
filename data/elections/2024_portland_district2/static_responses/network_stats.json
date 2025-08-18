@@ -1,0 +1,7 @@
+{
+  "total_nodes": 25.0,
+  "total_edges": 300.0,
+  "avg_connections": 24.0,
+  "max_connections": 24.0,
+  "avg_strength_centrality": 1.281112
+}

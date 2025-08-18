@@ -2,7 +2,7 @@
 -- Creates a lookup table for all candidate voting columns
 
 CREATE OR REPLACE TABLE candidate_columns AS
-SELECT 
+SELECT
     column_name,
     -- Extract candidate ID (e.g., 36, 37, 38...)
     CAST(regexp_extract(column_name, 'Choice_(\d+)_1:', 1) AS INTEGER) as candidate_id,
@@ -17,16 +17,16 @@ WHERE table_name = 'rcv_data'
 
 -- Create candidate lookup table (one row per candidate)
 CREATE OR REPLACE TABLE candidates AS
-SELECT DISTINCT 
-    candidate_id, 
+SELECT DISTINCT
+    candidate_id,
     candidate_name,
     COUNT(*) as rank_columns  -- Should be 6 (ranks 1-6)
-FROM candidate_columns 
+FROM candidate_columns
 GROUP BY candidate_id, candidate_name
 ORDER BY candidate_id;
 
 -- Validation: Check we have expected number of candidates and ranks
-SELECT 
+SELECT
     COUNT(*) as total_candidates,
     MIN(rank_columns) as min_ranks,
     MAX(rank_columns) as max_ranks,

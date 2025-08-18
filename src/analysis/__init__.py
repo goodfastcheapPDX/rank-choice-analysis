@@ -8,21 +8,20 @@ This module provides STV (Single Transferable Vote) tabulation implementations:
 The default STVTabulator uses PyRankVote for industry-standard reliability.
 """
 
-# Import the PyRankVote implementation as the default
-from .stv_pyrankvote import PyRankVoteSTVTabulator as STVTabulator
-
+# Import shared data structures
 # Keep original implementation available for comparison/testing
+from .stv import STVRound
 from .stv import STVTabulator as OriginalSTVTabulator
 
-# Import shared data structures
-from .stv import STVRound
+# Import the PyRankVote implementation as the default
+from .stv_pyrankvote import PyRankVoteSTVTabulator as STVTabulator
 
 # Import verification utilities
 from .verification import ResultsVerifier
 
 __all__ = [
-    'STVTabulator',           # Default: PyRankVote implementation
-    'OriginalSTVTabulator',   # Original custom implementation
-    'STVRound',               # Shared data structure
-    'ResultsVerifier',        # Verification utilities
+    "STVTabulator",  # Default: PyRankVote implementation
+    "OriginalSTVTabulator",  # Original custom implementation
+    "STVRound",  # Shared data structure
+    "ResultsVerifier",  # Verification utilities
 ]

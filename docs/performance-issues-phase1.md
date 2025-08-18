@@ -193,7 +193,7 @@ def load_cvr_data(csv_path, force_rebuild=False):
         if validate_data_integrity():
             logger.info("Using existing ballots_long table")
             return get_data_stats()
-    
+
     # Rebuild only if necessary
     return rebuild_ballots_long(csv_path)
 ```

@@ -1,0 +1,91 @@
+{
+  "name": "Hub Candidate Scenario",
+  "description": "Election where one candidate receives many transfer votes from eliminated candidates",
+  "seats": 2,
+  "candidates": [
+    {"id": 1, "name": "Popular"},
+    {"id": 2, "name": "Hub"},
+    {"id": 3, "name": "Fringe1"},
+    {"id": 4, "name": "Fringe2"},
+    {"id": 5, "name": "Fringe3"}
+  ],
+  "ballots": [
+    {"id": "B001", "ranks": [1, 2, 3, 4, 5]},
+    {"id": "B002", "ranks": [1, 2, 3, 4, 5]},
+    {"id": "B003", "ranks": [1, 2, 4, 3, 5]},
+    {"id": "B004", "ranks": [1, 2, 5, 3, 4]},
+    {"id": "B005", "ranks": [3, 2, 1, 4, 5]},
+    {"id": "B006", "ranks": [4, 2, 1, 3, 5]},
+    {"id": "B007", "ranks": [5, 2, 1, 3, 4]},
+    {"id": "B008", "ranks": [3, 2, 4, 1, 5]},
+    {"id": "B009", "ranks": [4, 2, 5, 1, 3]},
+    {"id": "B010", "ranks": [5, 2, 3, 1, 4]}
+  ],
+  "total_ballots": 10,
+  "hand_computed_results": {
+    "quota": 4,
+    "quota_calculation": "floor(10 / (2 + 1)) + 1 = floor(3.33) + 1 = 4",
+    "round_1": {
+      "first_choice_counts": {
+        "1": 4,
+        "2": 0,
+        "3": 2,
+        "4": 2,
+        "5": 2
+      },
+      "winners": [1],
+      "popular_surplus": 0,
+      "note": "Popular wins exactly at quota, no surplus"
+    },
+    "round_2": {
+      "continuing_totals": {
+        "2": 0,
+        "3": 2,
+        "4": 2,
+        "5": 2
+      },
+      "eliminated": [2],
+      "note": "Hub eliminated first (0 votes)"
+    },
+    "round_3": {
+      "transfers_from_hub": {
+        "note": "Hub had no votes to transfer"
+      },
+      "continuing_totals": {
+        "3": 2,
+        "4": 2,
+        "5": 2
+      },
+      "eliminated": [5],
+      "note": "Fringe3 eliminated (tie-break decision)"
+    },
+    "round_4": {
+      "transfers_from_fringe3": {
+        "2": 2,
+        "note": "Both Fringe3 ballots go to Hub (2nd choice)"
+      },
+      "continuing_totals": {
+        "2": 2,
+        "3": 2,
+        "4": 2
+      },
+      "eliminated": [4],
+      "note": "Fringe2 eliminated (tie-break decision)"
+    },
+    "round_5": {
+      "transfers_from_fringe2": {
+        "2": 2,
+        "note": "Both Fringe2 ballots go to Hub (2nd choice)"
+      },
+      "continuing_totals": {
+        "2": 4,
+        "3": 2
+      },
+      "winners": [2],
+      "note": "Hub reaches quota through transfers, becomes winner"
+    },
+    "final_winners": [1, 2],
+    "final_winners_names": ["Popular", "Hub"],
+    "key_insight": "Hub candidate won despite receiving 0 first-choice votes, entirely through transfers"
+  }
+}

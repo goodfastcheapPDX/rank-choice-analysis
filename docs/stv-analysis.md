@@ -68,7 +68,7 @@ Eliminating candidate 44 with 262.0 votes
 === Final Results ===
 Elected (3 of 3 seats):
   1. Elana Pirtle-Guiney       : 19729.0 votes (Round 12)
-  2. Dan Ryan                  : 19729.0 votes (Round 12)  
+  2. Dan Ryan                  : 19729.0 votes (Round 12)
   3. Sameer Kanal              : 19729.0 votes (Round 12)
 ```
 
@@ -129,7 +129,7 @@ Currently supported:
 
 ### Export Options
 
-**Final Results CSV**: 
+**Final Results CSV**:
 ```csv
 candidate_id,candidate_name,final_votes,status,election_round
 46,Elana Pirtle-Guiney,19729.0,elected,12

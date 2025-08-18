@@ -79,7 +79,7 @@ http://localhost:8000
 STV Election Results
 Elected Candidates:
 1. Elana Pirtle-Guiney - 19729.0 votes (Round 12)
-2. Dan Ryan - 19729.0 votes (Round 12)  
+2. Dan Ryan - 19729.0 votes (Round 12)
 3. Sameer Kanal - 19729.0 votes (Round 12)
 
 Total Rounds: 12
@@ -117,7 +117,7 @@ Returns basic election statistics.
 
 **Candidate List**:
 ```
-GET /api/candidates  
+GET /api/candidates
 ```
 Returns all candidates with IDs and names.
 
@@ -169,7 +169,7 @@ Downloads summary statistics as CSV.
 
 **First Choice Export**:
 ```
-GET /api/export/first-choice  
+GET /api/export/first-choice
 ```
 Downloads first choice results as CSV.
 

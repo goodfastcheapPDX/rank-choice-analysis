@@ -1,0 +1,95 @@
+{
+  "name": "Clear Winner Scenario",
+  "description": "Simple 3-seat election where one candidate has clear majority in round 1",
+  "seats": 3,
+  "candidates": [
+    {"id": 1, "name": "Alice"},
+    {"id": 2, "name": "Bob"},
+    {"id": 3, "name": "Charlie"},
+    {"id": 4, "name": "Diana"},
+    {"id": 5, "name": "Eve"}
+  ],
+  "ballots": [
+    {"id": "B001", "ranks": [1, 2, 3, 4, 5]},
+    {"id": "B002", "ranks": [1, 2, 3, 4, 5]},
+    {"id": "B003", "ranks": [1, 2, 3, 4, 5]},
+    {"id": "B004", "ranks": [1, 2, 3, 4, 5]},
+    {"id": "B005", "ranks": [1, 2, 3, 4, 5]},
+    {"id": "B006", "ranks": [1, 2, 3, 4, 5]},
+    {"id": "B007", "ranks": [1, 3, 2, 4, 5]},
+    {"id": "B008", "ranks": [2, 1, 3, 4, 5]},
+    {"id": "B009", "ranks": [2, 1, 3, 4, 5]},
+    {"id": "B010", "ranks": [3, 1, 2, 4, 5]},
+    {"id": "B011", "ranks": [4, 1, 2, 3, 5]},
+    {"id": "B012", "ranks": [5, 1, 2, 3, 4]}
+  ],
+  "total_ballots": 12,
+  "hand_computed_results": {
+    "quota": 4,
+    "quota_calculation": "floor(12 / (3 + 1)) + 1 = floor(3) + 1 = 4",
+    "round_1": {
+      "first_choice_counts": {
+        "1": 7,
+        "2": 2,
+        "3": 1,
+        "4": 1,
+        "5": 1
+      },
+      "winners": [1],
+      "alice_surplus": 3,
+      "alice_surplus_fraction": 0.4286,
+      "note": "Alice wins with 7 votes (> quota of 4), surplus of 3"
+    },
+    "round_2": {
+      "transfers_from_alice": {
+        "2": 2.57,
+        "3": 0.43,
+        "note": "7 ballots transfer: 6 go to Bob (6 * 3/7 = 2.57), 1 goes to Charlie (1 * 3/7 = 0.43)"
+      },
+      "continuing_totals": {
+        "2": 4.57,
+        "3": 1.43,
+        "4": 1,
+        "5": 1
+      },
+      "winners": [2],
+      "bob_surplus": 0.57,
+      "note": "Bob reaches quota, has small surplus"
+    },
+    "round_3": {
+      "transfers_from_bob": {
+        "3": 0.57,
+        "note": "Bob's surplus goes to Charlie"
+      },
+      "continuing_totals": {
+        "3": 2,
+        "4": 1,
+        "5": 1
+      },
+      "eliminated": [5],
+      "note": "Eve eliminated (lowest vote count)"
+    },
+    "round_4": {
+      "transfers_from_eve": {
+        "1": 0,
+        "note": "Eve's ballot transfers to Alice (already elected, weight reduced)"
+      },
+      "continuing_totals": {
+        "3": 2,
+        "4": 1
+      },
+      "eliminated": [4],
+      "note": "Diana eliminated"
+    },
+    "round_5": {
+      "transfers_from_diana": {
+        "1": 0,
+        "note": "Diana's ballot transfers to Alice (already elected, weight reduced)"
+      },
+      "final_winner": [3],
+      "note": "Charlie wins final seat by elimination"
+    },
+    "final_winners": [1, 2, 3],
+    "final_winners_names": ["Alice", "Bob", "Charlie"]
+  }
+}

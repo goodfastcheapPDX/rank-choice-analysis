@@ -51,7 +51,7 @@ The recommended approach follows a **precompute vs on-demand** philosophy:
 ### 1.2 Optimize Data Types & Storage ⭐⭐⭐⭐
 **Impact**: High (memory reduction, faster I/O)
 **Current Problem**: Using default DuckDB types, no dictionary encoding
-**Solution**: 
+**Solution**:
 - Dictionary-encode `candidate_id` (22 candidates + write-ins)
 - Use INT8 for `rank_position` (1-6)
 - Use INT16 for `BallotID` references where possible
@@ -95,7 +95,7 @@ The recommended approach follows a **precompute vs on-demand** philosophy:
 
 ### 2.2 Query Pattern Optimization ⭐⭐⭐
 **Impact**: Medium (targeted performance gains)
-**Current Problems**: 
+**Current Problems**:
 - Coalition centrality recalculates network metrics per request
 - Supporter segmentation runs complex grouping queries
 - Round progression recalculates STV data

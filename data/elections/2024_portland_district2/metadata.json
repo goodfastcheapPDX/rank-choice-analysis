@@ -1,0 +1,63 @@
+{
+  "election_id": "2024_portland_district2",
+  "generation_time": "2025-08-18T11:44:27.904279",
+  "processing_time_seconds": 0.4227316379547119,
+  "data_version": "1.0",
+  "source_database": "election_data.db",
+  "statistics": {
+    "start_time": "2025-08-18T11:44:27.487135",
+    "operations_completed": [
+      "adjacent_pairs",
+      "candidate_metrics",
+      "data_type_optimization",
+      "static_responses"
+    ],
+    "performance_improvements": {
+      "adjacent_pairs": {
+        "operation_time_seconds": 0.12796759605407715,
+        "expected_speedup": "10-100x",
+        "api_endpoints_affected": [
+          "/api/coalition/pairs/all",
+          "/api/coalition/network"
+        ]
+      },
+      "candidate_metrics": {
+        "operation_time_seconds": 0.05221390724182129,
+        "expected_speedup": "5-20x",
+        "api_endpoints_affected": [
+          "/api/candidates/enhanced",
+          "/api/coalition/network"
+        ]
+      },
+      "data_type_optimization": {
+        "operation_time_seconds": 0.022324800491333008,
+        "expected_memory_reduction": "50-70%",
+        "expected_io_improvement": "30-50%",
+        "optimizations_applied": 2
+      },
+      "static_responses": {
+        "operation_time_seconds": 0.013671636581420898,
+        "files_generated": 3,
+        "expected_speedup": "100x",
+        "api_endpoints_affected": [
+          "/api/coalition/types",
+          "/api/candidates/enhanced"
+        ]
+      }
+    },
+    "data_sizes": {
+      "adjacent_pairs_mb": 0.02304840087890625,
+      "candidate_metrics_mb": 0.010869979858398438
+    },
+    "error_count": 0
+  },
+  "precomputed_tables": [
+    "adjacent_pairs",
+    "candidate_metrics"
+  ],
+  "data_quality": {
+    "total_pairs": "300",
+    "total_candidates": "25",
+    "avg_coalition_strength": 0.053381333333333336
+  }
+}

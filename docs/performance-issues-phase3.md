@@ -132,15 +132,15 @@ class StaticResponseCache:
     def __init__(self, election_id: str):
         self.election_id = election_id
         self.cache_dir = f"data/elections/{election_id}/static_responses"
-    
+
     async def get_cached_response(self, endpoint: str, params: dict) -> Optional[dict]:
         cache_key = self._generate_cache_key(endpoint, params)
         cache_file = self.cache_dir / f"{cache_key}.json.gz"
-        
+
         if cache_file.exists() and self._is_fresh(cache_file):
             return self._load_compressed_json(cache_file)
         return None
-    
+
     async def cache_response(self, endpoint: str, params: dict, data: dict):
         cache_key = self._generate_cache_key(endpoint, params)
         cache_file = self.cache_dir / f"{cache_key}.json.gz"
@@ -279,7 +279,7 @@ class HealthMonitor:
             'cpu_usage_percent': 80,
             'cache_hit_rate_percent': 70
         }
-    
+
     async def check_api_health(self) -> HealthStatus:
         """Check API endpoint response times and error rates"""
         start_time = time.time()
@@ -290,10 +290,10 @@ class HealthMonitor:
                 '/api/coalition/pairs/all?min_shared_ballots=100',
                 '/api/candidates/enhanced'
             ]
-            
+
             latencies = []
             errors = 0
-            
+
             for endpoint in test_endpoints:
                 endpoint_start = time.time()
                 try:
@@ -304,14 +304,14 @@ class HealthMonitor:
                 except Exception:
                     errors += 1
                     latencies.append(5000)  # Timeout as 5s
-            
+
             avg_latency = sum(latencies) / len(latencies)
             error_rate = (errors / len(test_endpoints)) * 100
-            
+
             status = 'healthy'
             if avg_latency > self.thresholds['api_latency_ms'] or error_rate > self.thresholds['error_rate_percent']:
                 status = 'degraded' if avg_latency < 2000 and error_rate < 20 else 'unhealthy'
-            
+
             return HealthStatus(
                 service='api',
                 status=status,
@@ -339,14 +339,14 @@ alerts:
     - error_rate > 20% (sustained 1 minute)
     - memory_usage > 95% (sustained 5 minutes)
     - data_staleness > 48 hours
-  
+
   warning:
     - api_response_time > 1s (sustained 5 minutes)
     - error_rate > 5% (sustained 2 minutes)
     - memory_usage > 80% (sustained 10 minutes)
     - cache_hit_rate < 70% (sustained 10 minutes)
     - data_staleness > 24 hours
-  
+
   info:
     - deployment_completed
     - data_refresh_completed
@@ -392,7 +392,7 @@ class ProgressiveDataLoader {
         this.api = apiClient;
         this.loadingStates = new Map();
     }
-    
+
     async loadCoalitionAnalysis(candidateId, progressCallback) {
         const stages = [
             { name: 'basic', endpoint: `/api/candidates/${candidateId}/profile`, priority: 'immediate' },
@@ -401,9 +401,9 @@ class ProgressiveDataLoader {
             { name: 'similarity', endpoint: `/api/candidates/${candidateId}/similarity`, priority: 'background' },
             { name: 'journey', endpoint: `/api/candidates/${candidateId}/ballot-journey`, priority: 'background' }
         ];
-        
+
         const results = {};
-        
+
         // Load stages progressively
         for (const stage of stages) {
             try {
@@ -412,20 +412,20 @@ class ProgressiveDataLoader {
                     status: 'loading',
                     message: `Loading ${stage.name} data...`
                 });
-                
+
                 const data = await this.api.get(stage.endpoint);
                 results[stage.name] = data;
-                
+
                 progressCallback({
                     stage: stage.name,
                     status: 'complete',
                     data: data,
                     message: `${stage.name} data loaded`
                 });
-                
+
                 // Allow UI to update between stages
                 await this.sleep(10);
-                
+
             } catch (error) {
                 progressCallback({
                     stage: stage.name,
@@ -435,10 +435,10 @@ class ProgressiveDataLoader {
                 });
             }
         }
-        
+
         return results;
     }
-    
+
     sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }

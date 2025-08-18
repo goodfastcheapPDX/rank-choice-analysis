@@ -31,12 +31,12 @@ class CoalitionCache:
     def __init__(self, max_size: int = 128):
         self.max_size = max_size
         self._cache = {}
-    
+
     def get_cache_key(self, params: Dict[str, Any]) -> str:
         """Generate deterministic cache key from parameters"""
         param_str = json.dumps(params, sort_keys=True)
         return hashlib.md5(param_str.encode()).hexdigest()
-    
+
     @lru_cache(maxsize=128)
     def get_coalition_pairs(self, min_shared_ballots: int, min_strength: float):
         """Cached coalition pairs retrieval"""
@@ -199,7 +199,7 @@ class PerformanceMonitor:
     def __init__(self):
         self.metrics = {}
         self.logger = logging.getLogger('performance')
-    
+
     def track_endpoint(self, endpoint_name: str):
         def decorator(func):
             @wraps(func)
@@ -264,12 +264,12 @@ class CacheWarmer:
             {'min_shared_ballots': 200, 'min_strength': 0.25},
             # Additional common combinations
         ]
-    
+
     async def warm_coalition_cache(self):
         """Pre-populate cache with common queries"""
         for params in self.common_parameters:
             await self.cache.get_coalition_pairs(**params)
-    
+
     async def warm_network_cache(self):
         """Pre-populate network analysis cache"""
         pass
@@ -309,7 +309,7 @@ class CacheWarmer:
 # Benchmark targets after Phase 2
 PERFORMANCE_TARGETS = {
     'coalition_pairs_all': 200,      # ms (vs 2000-5000ms baseline)
-    'coalition_network': 300,        # ms (vs 3000-8000ms baseline)  
+    'coalition_network': 300,        # ms (vs 3000-8000ms baseline)
     'candidate_centrality': 150,     # ms (vs 1000-3000ms baseline)
     'supporter_segments': 400,       # ms (vs 1000-2000ms baseline)
     'cache_hit_rate': 80,           # percentage

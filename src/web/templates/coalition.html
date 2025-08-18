@@ -505,11 +505,11 @@
 <div class="card">
     <h2>🤝 Coalition Analysis Dashboard</h2>
     <p>Explore candidate coalitions, voter preferences, and ranking proximity patterns in the Portland City Council District 2 election.</p>
-    
+
     <div class="introduction-panel">
         <h4>💡 What You'll Discover Here</h4>
         <p>Coalition analysis reveals the hidden relationships between candidates based on how voters actually ranked them. When voters consistently rank two candidates near each other on their ballots, it suggests these candidates have similar appeal or aligned political positions.</p>
-        
+
         <div class="key-insights">
             <h5>Key Questions This Analysis Answers:</h5>
             <ul>
@@ -519,7 +519,7 @@
                 <li><strong>What are the major political groupings?</strong> Discover the election's coalition landscape</li>
             </ul>
         </div>
-        
+
         <p><strong>💻 Interactive Features:</strong> Use the controls throughout this page to adjust analysis parameters and explore different perspectives on the coalition data. Each visualization offers unique insights into Portland's ranked-choice election dynamics.</p>
     </div>
 </div>
@@ -528,7 +528,7 @@
 <div class="card">
     <h2>Coalition Type Distribution</h2>
     <p>Overview of different coalition strength levels found in the Portland election data.</p>
-    
+
     <div class="explanation-panel">
         <h4>Coalition Strength Types Explained</h4>
         <div class="coalition-types-guide">
@@ -550,7 +550,7 @@
             </div>
         </div>
     </div>
-    
+
     <div id="coalition-type-loading" class="loading">Loading coalition type breakdown...</div>
     <div id="coalition-type-content" style="display: none;">
         <div id="coalition-type-chart"></div>
@@ -563,7 +563,7 @@
 <div class="card">
     <h2>Strongest Coalition Pairs</h2>
     <p>Candidate pairs ranked by coalition strength (combination of affinity and ranking proximity)</p>
-    
+
     <div class="explanation-panel">
         <h4>Understanding the Coalition Pairs Table</h4>
         <div class="table-explanations">
@@ -588,7 +588,7 @@
             </div>
         </div>
     </div>
-    
+
     <div id="top-pairs-loading" class="loading">Loading top coalition pairs...</div>
     <div id="top-pairs-content" style="display: none;">
         <table id="top-pairs-table">
@@ -623,11 +623,11 @@
 <div class="card">
     <h2>🎯 Detected Coalition Groups</h2>
     <p>Automatically detected coalition clusters based on strong relationships between candidates</p>
-    
+
     <div class="explanation-panel">
         <h4>What are Coalition Groups?</h4>
         <p>Coalition groups are candidates whose supporters tend to rank them similarly on their ballots. When voters consistently rank two candidates close together (like both in their top 3), it suggests these candidates appeal to similar voter bases or have aligned political positions.</p>
-        
+
         <div class="examples-section">
             <h5>💡 Interactive Tips:</h5>
             <ul>
@@ -636,12 +636,12 @@
                 <li><strong>Smaller "Min Group Size" (2-3)</strong>: See pairs and small alliances</li>
                 <li><strong>Larger "Min Group Size" (4-5)</strong>: Only major political coalitions with many connected candidates</li>
             </ul>
-            
+
             <div class="cluster-note">
                 <p><strong>📝 Note:</strong> Groups are formed by connecting candidates who share enough ballots and have sufficient coalition strength, then finding all connected candidates in the network.</p>
             </div>
         </div>
-        
+
         <div class="interpretation-guide">
             <h5>🔍 How to Read the Results:</h5>
             <ul>
@@ -652,7 +652,7 @@
             </ul>
         </div>
     </div>
-    
+
     <div class="cluster-controls">
         <div class="control-group">
             <label for="cluster-strength">Min Coalition Strength:</label>
@@ -666,7 +666,7 @@
         </div>
         <button class="btn" onclick="updateClusters()">Update Clusters</button>
     </div>
-    
+
     <div id="clusters-loading" class="loading">Loading coalition clusters...</div>
     <div id="clusters-content" style="display: none;">
         <div id="clusters-summary"></div>
@@ -678,11 +678,11 @@
 <div class="card">
     <h2>🕸️ Interactive Coalition Network</h2>
     <p>Explore candidate relationships as an interactive network graph. Node size represents weighted voter preference (1st choice = 6 points, 2nd = 5 points, etc.), edge thickness represents coalition strength. <strong>Use mouse wheel to zoom, drag to pan, click nodes to highlight connections.</strong></p>
-    
+
     <div class="explanation-panel">
         <h4>Understanding the Network</h4>
         <p>This network shows how candidates relate to each other based on real voter behavior. Each circle (node) is a candidate, and lines (edges) connect candidates whose supporters ranked them similarly.</p>
-        
+
         <div class="visual-guide">
             <h5>📊 What the Sizes and Colors Mean:</h5>
             <ul>
@@ -694,7 +694,7 @@
                 <li><strong>Thin lines</strong>: Weaker coalition relationships</li>
             </ul>
         </div>
-        
+
         <div class="interaction-guide">
             <h5>🎮 How to Explore:</h5>
             <ul>
@@ -705,7 +705,7 @@
                 <li><strong>Drag to pan</strong>: Move around the network to explore different regions</li>
             </ul>
         </div>
-        
+
         <div class="definitions-section">
             <h5>📖 Key Terms:</h5>
             <ul>
@@ -713,7 +713,7 @@
                 <li><strong>"Coalition Strength"</strong>: How close together candidates were ranked on their shared ballots. Higher values mean voters consistently ranked them near each other (like both in top 3).</li>
                 <li><strong>"Min Shared Ballots"</strong>: Only show connections between candidates if at least this many voters ranked both of them.</li>
             </ul>
-            
+
             <div class="example-calculation">
                 <h6>🧮 Example:</h6>
                 <p>If you see a line between Candidate A and B with "Coalition Strength: 0.15" and your filter is set to "Min Shared Ballots: 100", this means:</p>
@@ -724,7 +724,7 @@
                 </ul>
             </div>
         </div>
-        
+
         <div class="examples-section">
             <h5>💡 Try These Experiments:</h5>
             <ul>
@@ -735,12 +735,12 @@
                 <li><strong>Filter by "Strong Only"</strong>: Focus on the most significant political alliances</li>
                 <li><strong>Click on a winner (red circle)</strong>: See which other candidates formed coalitions with Portland's elected officials</li>
             </ul>
-            
+
             <div class="context-note">
                 <p><strong>📊 Why These Defaults?</strong> In a 20+ candidate race, appearing together on any ballot is meaningful. The default thresholds (200 shared ballots, 0.25 strength) are calibrated to show significant relationships while filtering out statistical noise.</p>
             </div>
         </div>
-        
+
         <div class="interpretation-guide">
             <h5>🔍 What Patterns to Look For:</h5>
             <ul>
@@ -751,7 +751,7 @@
             </ul>
         </div>
     </div>
-    
+
     <div class="network-controls">
         <div class="control-group">
             <label for="strength-threshold">Coalition Strength Threshold:</label>
@@ -776,7 +776,7 @@
         <button class="btn" onclick="updateNetwork()">Update Network</button>
         <button class="btn secondary" onclick="resetNetwork()">Reset View</button>
     </div>
-    
+
     <div id="network-loading" class="loading">Loading coalition network...</div>
     <div id="network-container" style="display: none;">
         <div id="network-stats" class="network-stats"></div>
@@ -815,7 +815,7 @@
 <div class="card">
     <h2>🔍 Candidate Pair Explorer</h2>
     <p>Select any two candidates to analyze their coalition relationship in detail</p>
-    
+
     <div class="grid">
         <div class="form-group">
             <label for="candidate1-select">First Candidate:</label>
@@ -830,9 +830,9 @@
             </select>
         </div>
     </div>
-    
+
     <button class="btn" onclick="analyzePair()">Analyze Pair</button>
-    
+
     <div id="pair-analysis-result" style="display: none; margin-top: 1rem;">
         <h3>Detailed Pair Analysis</h3>
         <div id="pair-analysis-content"></div>
@@ -881,7 +881,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     await loadWinnerAnalysis();
     await loadCoalitionClusters();
     await loadNetworkVisualization();
-    
+
     // Set up control listeners
     setupNetworkControls();
     setupClusterControls();
@@ -892,25 +892,25 @@ async function loadCandidates() {
     try {
         const data = await fetchData('/api/candidates');
         candidates = data; // API returns candidates array directly
-        
+
         const candidate1Select = document.getElementById('candidate1-select');
         const candidate2Select = document.getElementById('candidate2-select');
-        
+
         if (!candidate1Select || !candidate2Select) {
             console.error('Candidate select elements not found');
             return;
         }
-        
+
         candidate1Select.innerHTML = '<option value="">Select first candidate...</option>';
         candidate2Select.innerHTML = '<option value="">Select second candidate...</option>';
-        
+
         candidates.forEach(candidate => {
             const option1 = new Option(candidate.candidate_name, candidate.candidate_id);
             const option2 = new Option(candidate.candidate_name, candidate.candidate_id);
             candidate1Select.add(option1);
             candidate2Select.add(option2);
         });
-        
+
         console.log(`Loaded ${candidates.length} candidates into dropdowns`);
     } catch (error) {
         console.error('Error loading candidates:', error);
@@ -926,7 +926,7 @@ async function loadCandidates() {
 async function loadCoalitionTypes() {
     try {
         const data = await fetchData('/api/coalition/types');
-        
+
         // Create pie chart
         const traces = [{
             type: 'pie',
@@ -937,14 +937,14 @@ async function loadCoalitionTypes() {
                 colors: ['#e74c3c', '#f39c12', '#27ae60', '#3498db']
             }
         }];
-        
+
         const layout = {
             title: 'Coalition Types Distribution',
             height: 400
         };
-        
+
         Plotly.newPlot('coalition-type-chart', traces, layout);
-        
+
         // Create stats grid
         const statsHtml = Object.entries(data.coalition_type_counts).map(([type, count]) => `
             <div class="stat-box">
@@ -952,28 +952,28 @@ async function loadCoalitionTypes() {
                 <span class="stat-label">${type.charAt(0).toUpperCase() + type.slice(1)} Coalitions</span>
             </div>
         `).join('');
-        
+
         document.getElementById('coalition-type-stats').innerHTML = statsHtml;
-        
+
         // Show examples
         const examplesHtml = Object.entries(data.examples).map(([type, examples]) => `
             <div>
                 <h4>${type.charAt(0).toUpperCase() + type.slice(1)} Coalition Examples:</h4>
                 <ul>
                     ${examples.map(ex => `
-                        <li><strong>${ex.candidate_1_name}</strong> & <strong>${ex.candidate_2_name}</strong> 
+                        <li><strong>${ex.candidate_1_name}</strong> & <strong>${ex.candidate_2_name}</strong>
                         (${ex.shared_ballots.toLocaleString()} ballots, avg distance ${ex.avg_distance})</li>
                     `).join('')}
                 </ul>
             </div>
         `).join('');
-        
+
         document.getElementById('coalition-type-examples').innerHTML = examplesHtml;
-        
+
         // Show content
         document.getElementById('coalition-type-loading').style.display = 'none';
         document.getElementById('coalition-type-content').style.display = 'block';
-        
+
     } catch (error) {
         showError('coalition-type-loading', 'Failed to load coalition type data');
     }
@@ -984,7 +984,7 @@ async function loadTopPairs() {
     try {
         const data = await fetchData('/api/coalition/pairs/all?min_shared_ballots=1000');
         coalitionPairs = data.detailed_pairs;
-        
+
         const tbody = document.querySelector('#top-pairs-table tbody');
         tbody.innerHTML = coalitionPairs.slice(0, 15).map((pair, index) => `
             <tr>
@@ -1002,10 +1002,10 @@ async function loadTopPairs() {
                 </td>
             </tr>
         `).join('');
-        
+
         document.getElementById('top-pairs-loading').style.display = 'none';
         document.getElementById('top-pairs-content').style.display = 'block';
-        
+
     } catch (error) {
         showError('top-pairs-loading', 'Failed to load coalition pairs data');
     }
@@ -1020,21 +1020,21 @@ async function loadWinnerAnalysis() {
             {id: 46, name: 'Elana Pirtle-Guiney'},
             {id: 55, name: 'Dan Ryan'}
         ];
-        
+
         const winnerPairs = [
             [36, 46], // Kanal & Pirtle-Guiney
             [36, 55], // Kanal & Ryan
             [46, 55]  // Pirtle-Guiney & Ryan
         ];
-        
+
         const pairAnalyses = await Promise.all(
             winnerPairs.map(([id1, id2]) => fetchData(`/api/coalition/pairs/${id1}/${id2}`))
         );
-        
+
         const winnerPairsHtml = pairAnalyses.map((analysis, index) => {
             const pair = analysis.pair_analysis;
             const proximity = analysis.proximity_analysis;
-            
+
             return `
                 <div class="card">
                     <h3>${pair.candidate_1_name} & ${pair.candidate_2_name}</h3>
@@ -1056,12 +1056,12 @@ async function loadWinnerAnalysis() {
                 </div>
             `;
         }).join('');
-        
+
         document.getElementById('winner-pairs').innerHTML = winnerPairsHtml;
-        
+
         document.getElementById('winner-analysis-loading').style.display = 'none';
         document.getElementById('winner-analysis-content').style.display = 'block';
-        
+
     } catch (error) {
         showError('winner-analysis-loading', 'Failed to load winner analysis data');
     }
@@ -1071,17 +1071,17 @@ async function loadWinnerAnalysis() {
 async function analyzePair() {
     const candidate1Id = document.getElementById('candidate1-select').value;
     const candidate2Id = document.getElementById('candidate2-select').value;
-    
+
     if (!candidate1Id || !candidate2Id) {
         alert('Please select both candidates');
         return;
     }
-    
+
     if (candidate1Id === candidate2Id) {
         alert('Please select two different candidates');
         return;
     }
-    
+
     await quickAnalyzePair(parseInt(candidate1Id), parseInt(candidate2Id));
 }
 
@@ -1090,11 +1090,11 @@ async function quickAnalyzePair(candidate1Id, candidate2Id) {
     try {
         document.getElementById('pair-analysis-result').style.display = 'block';
         document.getElementById('pair-analysis-content').innerHTML = '<div class="loading">Loading detailed analysis...</div>';
-        
+
         const data = await fetchData(`/api/coalition/pairs/${candidate1Id}/${candidate2Id}`);
         const pair = data.pair_analysis;
         const proximity = data.proximity_analysis;
-        
+
         // Create detailed analysis content
         const analysisHtml = `
             <div class="grid">
@@ -1123,13 +1123,13 @@ async function quickAnalyzePair(candidate1Id, candidate2Id) {
                 </div>
             </div>
         `;
-        
+
         document.getElementById('pair-analysis-content').innerHTML = analysisHtml;
-        
+
         // Create proximity distribution chart
         const distances = Object.keys(proximity.distance_distribution).map(Number);
         const counts = Object.values(proximity.distance_distribution);
-        
+
         const trace = {
             x: distances,
             y: counts,
@@ -1138,16 +1138,16 @@ async function quickAnalyzePair(candidate1Id, candidate2Id) {
                 color: distances.map(d => d <= 2 ? '#27ae60' : d >= 4 ? '#e74c3c' : '#f39c12')
             }
         };
-        
+
         const layout = {
             title: `Ranking Distance Distribution: ${pair.candidate_1_name} & ${pair.candidate_2_name}`,
             xaxis: { title: 'Ranking Distance' },
             yaxis: { title: 'Number of Ballots' },
             height: 400
         };
-        
+
         Plotly.newPlot('proximity-chart', [trace], layout);
-        
+
     } catch (error) {
         document.getElementById('pair-analysis-content').innerHTML = `<div class="error">Error: ${error.message}</div>`;
     }
@@ -1162,16 +1162,16 @@ async function loadNetworkVisualization() {
     try {
         document.getElementById('network-loading').style.display = 'block';
         networkData = await fetchData('/api/coalition/network?min_shared_ballots=200&min_strength=0.25');
-        
+
         console.log('Network data loaded:', {
             nodes: networkData?.nodes?.length,
             edges: networkData?.edges?.length,
             stats: networkData?.stats
         });
-        
+
         document.getElementById('network-loading').style.display = 'none';
         document.getElementById('network-container').style.display = 'block';
-        
+
         updateNetworkStats();
         renderNetwork();
     } catch (error) {
@@ -1184,15 +1184,15 @@ function setupNetworkControls() {
     // Strength threshold slider
     const strengthSlider = document.getElementById('strength-threshold');
     const strengthValue = document.getElementById('strength-value');
-    
+
     strengthSlider.addEventListener('input', function() {
         strengthValue.textContent = parseFloat(this.value).toFixed(2);
     });
-    
+
     // Ballots threshold slider
     const ballotsSlider = document.getElementById('ballots-threshold');
     const ballotsValue = document.getElementById('ballots-value');
-    
+
     ballotsSlider.addEventListener('input', function() {
         ballotsValue.textContent = this.value;
     });
@@ -1202,21 +1202,21 @@ async function updateNetwork() {
     const strengthThreshold = parseFloat(document.getElementById('strength-threshold').value);
     const ballotsThreshold = parseInt(document.getElementById('ballots-threshold').value);
     const coalitionFilter = document.getElementById('coalition-filter').value;
-    
+
     try {
         document.getElementById('network-loading').style.display = 'block';
         document.getElementById('network-container').style.display = 'none';
-        
+
         networkData = await fetchData(`/api/coalition/network?min_shared_ballots=${ballotsThreshold}&min_strength=${strengthThreshold}`);
-        
+
         // Apply coalition type filter
         if (coalitionFilter !== 'all') {
             networkData.edges = networkData.edges.filter(edge => edge.coalitionType === coalitionFilter);
         }
-        
+
         document.getElementById('network-loading').style.display = 'none';
         document.getElementById('network-container').style.display = 'block';
-        
+
         updateNetworkStats();
         renderNetwork();
     } catch (error) {
@@ -1227,7 +1227,7 @@ async function updateNetwork() {
 
 function updateNetworkStats() {
     if (!networkData) return;
-    
+
     const stats = networkData.stats;
     document.getElementById('network-stats').innerHTML = `
         <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
@@ -1248,31 +1248,31 @@ function renderNetwork() {
         document.getElementById('network-graph').innerHTML = '<div style="padding: 2rem; text-align: center; color: #7f8c8d;">No network data to display</div>';
         return;
     }
-    
+
     console.log('Rendering network with:', networkData.nodes.length, 'nodes and', networkData.edges.length, 'edges');
     console.log('Sample edge data:', networkData.edges.slice(0, 3));
     console.log('Coalition types in edges:', [...new Set(networkData.edges.map(e => e.coalitionType))]);
-    
+
     // Debug node vote values and create scaling function
     const voteValues = networkData.nodes.map(n => n.votes).sort((a, b) => b - a);
     const minVotes = Math.min(...voteValues);
     const maxVotes = Math.max(...voteValues);
     const voteRange = maxVotes - minVotes;
-    
+
     // Create scaling function for node radius based on area (more visually accurate)
     const nodeRadius = (votes) => {
         if (voteRange === 0) return 15;
-        
+
         // Use square root scaling so area is proportional to votes
         // This makes visual size differences match data differences
         const minArea = Math.PI * 6 * 6; // Min circle area (6px radius)
         const maxArea = Math.PI * 30 * 30; // Max circle area (30px radius)
-        
+
         const normalized = (votes - minVotes) / voteRange;
         const area = minArea + (normalized * (maxArea - minArea));
         return Math.sqrt(area / Math.PI); // Convert back to radius
     };
-    
+
     console.log('Vote values range:', {
         min: minVotes,
         max: maxVotes,
@@ -1280,12 +1280,12 @@ function renderNetwork() {
         median: voteValues[Math.floor(voteValues.length / 2)],
         sample: voteValues.slice(0, 5)
     });
-    
+
     // Show top and bottom candidates
     const nodesByVotes = networkData.nodes.sort((a, b) => b.votes - a.votes);
     console.log('Top candidates:', nodesByVotes.slice(0, 3).map(n => ({name: n.name, votes: n.votes, radius: nodeRadius(n.votes)})));
     console.log('Bottom candidates:', nodesByVotes.slice(-3).map(n => ({name: n.name, votes: n.votes, radius: nodeRadius(n.votes)})));
-    
+
     // Check if we have any edges to display
     if (networkData.edges.length === 0) {
         document.getElementById('network-graph').innerHTML = `
@@ -1296,47 +1296,47 @@ function renderNetwork() {
         `;
         return;
     }
-    
+
     // Clear existing visualization
     document.getElementById('network-graph').innerHTML = '';
-    
+
     const container = document.getElementById('network-graph');
     const width = container.offsetWidth || 800;
     const height = 600; // Fixed height since CSS might not be reliable
-    
+
     console.log('Network container dimensions:', { width, height, offsetWidth: container.offsetWidth, offsetHeight: container.offsetHeight });
-    
+
     // Create SVG with zoom
     const svg = d3.select('#network-graph')
         .append('svg')
         .attr('width', width)
         .attr('height', height);
-    
+
     // Add zoom behavior
     const zoom = d3.zoom()
         .scaleExtent([0.3, 3])
         .on('zoom', function(event) {
             networkSvg.attr('transform', event.transform);
         });
-    
+
     svg.call(zoom);
-    
+
     // Create the main group that will be transformed
     networkSvg = svg.append('g');
-    
+
     // Create tooltip
     const tooltip = d3.select('#network-graph')
         .append('div')
         .attr('class', 'network-tooltip')
         .style('opacity', 0);
-    
+
     // Create force simulation
     simulation = d3.forceSimulation(networkData.nodes)
         .force('link', d3.forceLink(networkData.edges).id(d => d.id).distance(d => Math.max(80, 150 - d.strength * 100)))
         .force('charge', d3.forceManyBody().strength(-800))
         .force('center', d3.forceCenter(width / 2, height / 2))
         .force('collision', d3.forceCollide().radius(d => nodeRadius(d.votes) + 5));
-    
+
     // Add edges
     const link = networkSvg.append('g')
         .attr('class', 'links')
@@ -1373,7 +1373,7 @@ function renderNetwork() {
         .on('mouseout', function() {
             tooltip.transition().duration(500).style('opacity', 0);
         });
-    
+
     // Add nodes
     const node = networkSvg.append('g')
         .attr('class', 'nodes')
@@ -1407,11 +1407,11 @@ function renderNetwork() {
         .on('click', function(event, d) {
             // Highlight connections
             link.style('opacity', l => (l.source.id === d.id || l.target.id === d.id) ? 1 : 0.1);
-            node.style('opacity', n => (n.id === d.id || 
-                networkData.edges.some(e => (e.source.id === d.id && e.target.id === n.id) || 
+            node.style('opacity', n => (n.id === d.id ||
+                networkData.edges.some(e => (e.source.id === d.id && e.target.id === n.id) ||
                                            (e.target.id === d.id && e.source.id === n.id))) ? 1 : 0.3);
         });
-    
+
     // Add labels
     const label = networkSvg.append('g')
         .attr('class', 'labels')
@@ -1421,7 +1421,7 @@ function renderNetwork() {
         .attr('class', 'network-label')
         .text(d => d.name.split(' ').slice(-1)[0]) // Show last name only
         .attr('dy', -3);
-    
+
     // Update positions on simulation tick
     simulation.on('tick', function() {
         link
@@ -1429,28 +1429,28 @@ function renderNetwork() {
             .attr('y1', d => d.source.y)
             .attr('x2', d => d.target.x)
             .attr('y2', d => d.target.y);
-        
+
         node
             .attr('cx', d => d.x)
             .attr('cy', d => d.y);
-        
+
         label
             .attr('x', d => d.x)
             .attr('y', d => d.y);
     });
-    
+
     // Drag functions
     function dragstarted(event, d) {
         if (!event.active) simulation.alphaTarget(0.3).restart();
         d.fx = d.x;
         d.fy = d.y;
     }
-    
+
     function dragged(event, d) {
         d.fx = event.x;
         d.fy = event.y;
     }
-    
+
     function dragended(event, d) {
         if (!event.active) simulation.alphaTarget(0);
         d.fx = null;
@@ -1464,14 +1464,14 @@ function resetNetwork() {
         networkSvg.selectAll('.network-edge').style('opacity', 0.8);
         networkSvg.selectAll('.network-node').style('opacity', 1);
     }
-    
+
     // Reset controls
     document.getElementById('strength-threshold').value = 0.25;
     document.getElementById('strength-value').textContent = '0.25';
     document.getElementById('ballots-threshold').value = 200;
     document.getElementById('ballots-value').textContent = '200';
     document.getElementById('coalition-filter').value = 'all';
-    
+
     // Reload network
     loadNetworkVisualization();
 }
@@ -1481,10 +1481,10 @@ async function loadCoalitionClusters() {
     try {
         document.getElementById('clusters-loading').style.display = 'block';
         const clusterData = await fetchData('/api/coalition/clusters?min_strength=0.2&min_group_size=3');
-        
+
         document.getElementById('clusters-loading').style.display = 'none';
         document.getElementById('clusters-content').style.display = 'block';
-        
+
         renderClusters(clusterData);
     } catch (error) {
         document.getElementById('clusters-loading').innerHTML = `<div class="error">Error loading clusters: ${error.message}</div>`;
@@ -1496,15 +1496,15 @@ function setupClusterControls() {
     // Cluster strength slider
     const strengthSlider = document.getElementById('cluster-strength');
     const strengthValue = document.getElementById('cluster-strength-value');
-    
+
     strengthSlider.addEventListener('input', function() {
         strengthValue.textContent = parseFloat(this.value).toFixed(2);
     });
-    
+
     // Cluster size slider
     const sizeSlider = document.getElementById('cluster-size');
     const sizeValue = document.getElementById('cluster-size-value');
-    
+
     sizeSlider.addEventListener('input', function() {
         sizeValue.textContent = this.value;
     });
@@ -1513,16 +1513,16 @@ function setupClusterControls() {
 async function updateClusters() {
     const minStrength = parseFloat(document.getElementById('cluster-strength').value);
     const minSize = parseInt(document.getElementById('cluster-size').value);
-    
+
     try {
         document.getElementById('clusters-loading').style.display = 'block';
         document.getElementById('clusters-content').style.display = 'none';
-        
+
         const clusterData = await fetchData(`/api/coalition/clusters?min_strength=${minStrength}&min_group_size=${minSize}`);
-        
+
         document.getElementById('clusters-loading').style.display = 'none';
         document.getElementById('clusters-content').style.display = 'block';
-        
+
         renderClusters(clusterData);
     } catch (error) {
         document.getElementById('clusters-loading').innerHTML = `<div class="error">Error updating clusters: ${error.message}</div>`;
@@ -1535,34 +1535,34 @@ function renderClusters(clusterData) {
         document.getElementById('clusters-content').innerHTML = '<div class="error">No cluster data available</div>';
         return;
     }
-    
+
     const summary = clusterData.summary;
-    
+
     // Render summary
     document.getElementById('clusters-summary').innerHTML = `
         <div style="background: #e8f5e8; padding: 1rem; border-radius: 6px; margin-bottom: 1rem; border-left: 4px solid #27ae60;">
             <strong>Cluster Summary:</strong>
-            ${summary.total_clusters} groups found, 
-            ${summary.total_candidates_clustered} candidates clustered, 
-            avg size: ${summary.avg_cluster_size}, 
+            ${summary.total_clusters} groups found,
+            ${summary.total_candidates_clustered} candidates clustered,
+            avg size: ${summary.avg_cluster_size},
             largest: ${summary.largest_cluster_size} candidates,
             ${summary.clusters_with_winners} clusters contain winners
         </div>
     `;
-    
+
     // Render clusters
     if (clusterData.clusters.length === 0) {
         document.getElementById('clusters-list').innerHTML = '<div class="loading">No coalition clusters detected with current parameters. Try lowering the coalition strength threshold.</div>';
         return;
     }
-    
+
     const clustersHtml = clusterData.clusters.map(cluster => {
         const hasWinners = cluster.has_winners;
         const candidateChips = cluster.candidates.map(candidate => {
             const isWinner = [36, 46, 55].includes(candidate.id);
             return `<span class="candidate-chip ${isWinner ? 'winner' : ''}">${candidate.name}</span>`;
         }).join('');
-        
+
         return `
             <div class="cluster-card ${hasWinners ? 'has-winners' : ''}">
                 <div class="cluster-header">
@@ -1582,42 +1582,42 @@ function renderClusters(clusterData) {
             </div>
         `;
     }).join('');
-    
+
     document.getElementById('clusters-list').innerHTML = clustersHtml;
 }
 </script>
 
 <style>
-.coalition-type-strong { 
-    background: #27ae60; 
-    color: white; 
-    padding: 2px 6px; 
-    border-radius: 3px; 
-    font-size: 0.85em; 
+.coalition-type-strong {
+    background: #27ae60;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.85em;
 }
 
-.coalition-type-moderate { 
-    background: #f39c12; 
-    color: white; 
-    padding: 2px 6px; 
-    border-radius: 3px; 
-    font-size: 0.85em; 
+.coalition-type-moderate {
+    background: #f39c12;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.85em;
 }
 
-.coalition-type-weak { 
-    background: #e74c3c; 
-    color: white; 
-    padding: 2px 6px; 
-    border-radius: 3px; 
-    font-size: 0.85em; 
+.coalition-type-weak {
+    background: #e74c3c;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.85em;
 }
 
-.coalition-type-strategic { 
-    background: #9b59b6; 
-    color: white; 
-    padding: 2px 6px; 
-    border-radius: 3px; 
-    font-size: 0.85em; 
+.coalition-type-strategic {
+    background: #9b59b6;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.85em;
 }
 
 #top-pairs-table th {

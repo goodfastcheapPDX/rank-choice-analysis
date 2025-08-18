@@ -41,7 +41,7 @@
             <input type="number" id="min-transfer-votes" value="100" min="0" step="100">
         </div>
     </div>
-    
+
     <div style="margin-top: 1rem;">
         <button class="btn" id="load-flow-btn" onclick="loadVoteFlow()">Load Vote Flow</button>
         <button class="btn btn-secondary" id="play-animation-btn" onclick="playAnimation()" disabled>Play Animation</button>
@@ -146,27 +146,27 @@ document.addEventListener('DOMContentLoaded', function() {
 // Load vote flow data
 async function loadVoteFlow() {
     const seats = document.getElementById('seats-input').value;
-    
+
     try {
         showLoadingState(true);
-        
+
         const data = await fetchData(`/api/stv-flow-data?seats=${seats}`);
         voteFlowData = data;
-        
+
         // Initialize UI components
         initializeRoundSelector();
         generateCandidateColors();
         displayVoteFlow();
         await displayRoundAnalysis();
         displayTransferDetails();
-        
+
         // Enable controls
         document.getElementById('play-animation-btn').disabled = false;
         document.getElementById('reset-view-btn').disabled = false;
         document.getElementById('current-round').disabled = false;
-        
+
         showLoadingState(false);
-        
+
     } catch (error) {
         showLoadingState(false);
         showError('visualization-container', `Failed to load vote flow data: ${error.message}`);
@@ -183,7 +183,7 @@ function showLoadingState(loading) {
 function initializeRoundSelector() {
     const selector = document.getElementById('current-round');
     selector.innerHTML = '<option value="all">All Rounds</option>';
-    
+
     if (voteFlowData && voteFlowData.rounds) {
         voteFlowData.rounds.forEach(round => {
             const option = new Option(`Round ${round.round_number}`, round.round_number);
@@ -194,14 +194,14 @@ function initializeRoundSelector() {
 
 function generateCandidateColors() {
     if (!voteFlowData) return;
-    
+
     const candidates = Object.keys(voteFlowData.candidate_flow_summary);
     const colors = [
-        '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', 
+        '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
         '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf',
         '#aec7e8', '#ffbb78', '#98df8a', '#ff9896', '#c5b0d5'
     ];
-    
+
     candidates.forEach((candidateId, index) => {
         candidateColors[candidateId] = colors[index % colors.length];
     });
@@ -209,27 +209,27 @@ function generateCandidateColors() {
 
 function displayVoteFlow() {
     if (!voteFlowData) return;
-    
+
     const currentRound = document.getElementById('current-round').value;
     const transferFilter = document.getElementById('transfer-filter').value;
     const minTransferVotes = parseInt(document.getElementById('min-transfer-votes').value);
-    
+
     // Filter transfer patterns
     let filteredTransfers = voteFlowData.transfer_patterns;
-    
+
     if (currentRound !== 'all') {
         filteredTransfers = filteredTransfers.filter(t => t.round_number == currentRound);
     }
-    
+
     if (transferFilter !== 'all') {
         filteredTransfers = filteredTransfers.filter(t => t.transfer_type === transferFilter);
     }
-    
+
     filteredTransfers = filteredTransfers.filter(t => t.votes_transferred >= minTransferVotes);
-    
+
     // Create Sankey diagram data
     const sankeyData = createSankeyData(filteredTransfers);
-    
+
     const data = [{
         type: "sankey",
         orientation: "h",
@@ -252,7 +252,7 @@ function displayVoteFlow() {
             hovertemplate: '%{customdata}<extra></extra>'
         }
     }];
-    
+
     const layout = {
         title: {
             text: currentRound === 'all' ? 'Complete Vote Flow' : `Round ${currentRound} Vote Transfers`,
@@ -262,15 +262,15 @@ function displayVoteFlow() {
         height: 600,
         margin: { l: 50, r: 50, t: 50, b: 50 }
     };
-    
+
     const config = {
         responsive: true,
         displayModeBar: true,
         modeBarButtonsToRemove: ['pan2d', 'lasso2d']
     };
-    
+
     Plotly.newPlot('flow-chart', data, layout, config);
-    
+
     // Update round info
     updateRoundInfo(currentRound);
 }
@@ -279,12 +279,12 @@ function createSankeyData(transfers) {
     const nodeMap = new Map();
     const links = [];
     let nodeIndex = 0;
-    
+
     // Create nodes for all candidates involved in transfers
     transfers.forEach(transfer => {
         const fromKey = `${transfer.from_candidate}_${transfer.round_number}`;
         const toKey = `${transfer.to_candidate}_${transfer.round_number}`;
-        
+
         if (!nodeMap.has(fromKey)) {
             nodeMap.set(fromKey, {
                 index: nodeIndex++,
@@ -293,7 +293,7 @@ function createSankeyData(transfers) {
                 round: transfer.round_number
             });
         }
-        
+
         if (!nodeMap.has(toKey)) {
             nodeMap.set(toKey, {
                 index: nodeIndex++,
@@ -302,7 +302,7 @@ function createSankeyData(transfers) {
                 round: transfer.round_number
             });
         }
-        
+
         links.push({
             source: nodeMap.get(fromKey).index,
             target: nodeMap.get(toKey).index,
@@ -310,9 +310,9 @@ function createSankeyData(transfers) {
             label: `${transfer.from_candidate_name} → ${transfer.to_candidate_name}: ${Math.round(transfer.votes_transferred).toLocaleString()} votes (${transfer.transfer_type})`
         });
     });
-    
+
     const nodes = Array.from(nodeMap.values());
-    
+
     return {
         nodeLabels: nodes.map(n => n.label),
         nodeColors: nodes.map(n => candidateColors[n.candidateId] || '#999999'),
@@ -327,18 +327,18 @@ function createSankeyData(transfers) {
 function updateRoundInfo(currentRound) {
     const roundInfoDiv = document.getElementById('round-info');
     const roundDetailsDiv = document.getElementById('round-details');
-    
+
     if (currentRound === 'all') {
         roundInfoDiv.style.display = 'none';
         return;
     }
-    
+
     const roundData = voteFlowData.rounds.find(r => r.round_number == currentRound);
     if (!roundData) {
         roundInfoDiv.style.display = 'none';
         return;
     }
-    
+
     let html = `
         <div class="grid">
             <div>
@@ -349,31 +349,31 @@ function updateRoundInfo(currentRound) {
             </div>
             <div>
     `;
-    
+
     if (roundData.winners_this_round.length > 0) {
-        html += `<p><strong>Elected this round:</strong> ${roundData.winners_this_round.map(id => 
+        html += `<p><strong>Elected this round:</strong> ${roundData.winners_this_round.map(id =>
             voteFlowData.candidate_flow_summary[id]?.candidate_name || `ID-${id}`
         ).join(', ')}</p>`;
     }
-    
+
     if (roundData.eliminated_this_round.length > 0) {
-        html += `<p><strong>Eliminated this round:</strong> ${roundData.eliminated_this_round.map(id => 
+        html += `<p><strong>Eliminated this round:</strong> ${roundData.eliminated_this_round.map(id =>
             voteFlowData.candidate_flow_summary[id]?.candidate_name || `ID-${id}`
         ).join(', ')}</p>`;
     }
-    
+
     html += '</div></div>';
-    
+
     roundDetailsDiv.innerHTML = html;
     roundInfoDiv.style.display = 'block';
 }
 
 async function displayRoundAnalysis() {
     if (!voteFlowData) return;
-    
+
     // Vote totals by round chart
     const rounds = voteFlowData.rounds;
-    
+
     // Get first-choice vote data to properly identify top candidates
     let firstChoiceData;
     try {
@@ -386,16 +386,16 @@ async function displayRoundAnalysis() {
             first_choice_votes: 0
         }));
     }
-    
+
     // Sort candidates by first-choice votes and take top 10
     const topCandidateIds = firstChoiceData
         .sort((a, b) => b.first_choice_votes - a.first_choice_votes)
         .slice(0, 10)
         .map(c => c.candidate_id);
-    
+
     const traces = topCandidateIds.map(candidateId => {
         const candidateName = voteFlowData.candidate_flow_summary[candidateId].candidate_name;
-        
+
         return {
             x: rounds.map(r => r.round_number),
             y: rounds.map(r => r.vote_totals[candidateId] || 0),
@@ -405,16 +405,16 @@ async function displayRoundAnalysis() {
             line: { color: candidateColors[candidateId] }
         };
     });
-    
+
     const layout1 = {
         title: 'Vote Totals by Round (Top 10 by First-Choice Votes)',
         xaxis: { title: 'Round' },
         yaxis: { title: 'Votes' },
         height: 400
     };
-    
+
     Plotly.newPlot('vote-totals-chart', traces, layout1, { responsive: true });
-    
+
     // Transfer summary chart
     const transfersByRound = {};
     voteFlowData.transfer_patterns.forEach(transfer => {
@@ -424,7 +424,7 @@ async function displayRoundAnalysis() {
         }
         transfersByRound[round][transfer.transfer_type] += transfer.votes_transferred;
     });
-    
+
     const eliminationTrace = {
         x: Object.keys(transfersByRound),
         y: Object.values(transfersByRound).map(r => r.elimination),
@@ -432,7 +432,7 @@ async function displayRoundAnalysis() {
         type: 'bar',
         marker: { color: '#e74c3c' }
     };
-    
+
     const surplusTrace = {
         x: Object.keys(transfersByRound),
         y: Object.values(transfersByRound).map(r => r.surplus),
@@ -440,7 +440,7 @@ async function displayRoundAnalysis() {
         type: 'bar',
         marker: { color: '#27ae60' }
     };
-    
+
     const layout2 = {
         title: 'Vote Transfers by Round',
         xaxis: { title: 'Round' },
@@ -448,13 +448,13 @@ async function displayRoundAnalysis() {
         barmode: 'stack',
         height: 400
     };
-    
+
     Plotly.newPlot('transfer-summary-chart', [eliminationTrace, surplusTrace], layout2, { responsive: true });
 }
 
 function displayTransferDetails() {
     if (!voteFlowData) return;
-    
+
     const tbody = document.querySelector('#transfer-table tbody');
     tbody.innerHTML = voteFlowData.transfer_patterns
         .sort((a, b) => a.round_number - b.round_number || b.votes_transferred - a.votes_transferred)
@@ -473,17 +473,17 @@ function displayTransferDetails() {
 
 function playAnimation() {
     if (!voteFlowData) return;
-    
+
     const totalRounds = voteFlowData.rounds.length;
     currentAnimationRound = 1;
-    
+
     // Disable controls during animation
     document.getElementById('play-animation-btn').disabled = true;
-    
+
     animationTimer = setInterval(() => {
         document.getElementById('current-round').value = currentAnimationRound;
         displayVoteFlow();
-        
+
         currentAnimationRound++;
         if (currentAnimationRound > totalRounds) {
             clearInterval(animationTimer);
@@ -500,13 +500,13 @@ async function resetView() {
         clearInterval(animationTimer);
         animationTimer = null;
     }
-    
+
     // Reset controls
     document.getElementById('current-round').value = 'all';
     document.getElementById('transfer-filter').value = 'all';
     document.getElementById('min-transfer-votes').value = 100;
     document.getElementById('play-animation-btn').disabled = false;
-    
+
     // Refresh display
     displayVoteFlow();
     await displayRoundAnalysis();

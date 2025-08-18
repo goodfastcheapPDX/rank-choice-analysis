@@ -10,7 +10,7 @@ WITH target_first_ballots AS (
       AND rank_position = 1
 ),
 partner_analysis AS (
-    SELECT 
+    SELECT
         rank_position,
         candidate_name,
         COUNT(*) as votes,
@@ -21,7 +21,7 @@ partner_analysis AS (
       AND bl.rank_position IN (2, 3, 4, 5, 6)
     GROUP BY rank_position, candidate_name
 )
-SELECT 
+SELECT
     rank_position,
     candidate_name,
     votes,
@@ -38,14 +38,14 @@ WITH target_non_first_ballots AS (
     WHERE bl1.candidate_name = target_candidate
       AND bl1.rank_position > 1
       AND NOT EXISTS (
-          SELECT 1 
-          FROM ballots_long bl2 
-          WHERE bl2.BallotID = bl1.BallotID 
+          SELECT 1
+          FROM ballots_long bl2
+          WHERE bl2.BallotID = bl1.BallotID
             AND bl2.candidate_name = target_candidate
             AND bl2.rank_position = 1
       )
 )
-SELECT 
+SELECT
     'First choice of voters who rank ' || target_candidate || ' at rank ' || target_rank as analysis,
     bl.candidate_name as first_choice_candidate,
     COUNT(*) as votes,
@@ -62,20 +62,20 @@ WITH all_candidates AS (
     SELECT DISTINCT candidate_name FROM ballots_long WHERE rank_position = 1
 ),
 coalition_data AS (
-    SELECT 
+    SELECT
         ac.candidate_name as first_choice,
         bl.rank_position,
         bl.candidate_name as other_choice,
         COUNT(*) as votes
     FROM all_candidates ac
     JOIN ballots_long fc ON fc.candidate_name = ac.candidate_name AND fc.rank_position = 1
-    JOIN ballots_long bl ON bl.BallotID = fc.BallotID 
-    WHERE bl.rank_position IN (2, 3) 
+    JOIN ballots_long bl ON bl.BallotID = fc.BallotID
+    WHERE bl.rank_position IN (2, 3)
       AND bl.candidate_name != ac.candidate_name
     GROUP BY ac.candidate_name, bl.rank_position, bl.candidate_name
 ),
 ranked_coalitions AS (
-    SELECT 
+    SELECT
         first_choice,
         rank_position,
         other_choice,
@@ -83,7 +83,7 @@ ranked_coalitions AS (
         ROW_NUMBER() OVER (PARTITION BY first_choice, rank_position ORDER BY votes DESC) as choice_rank
     FROM coalition_data
 )
-SELECT 
+SELECT
     first_choice,
     rank_position,
     other_choice,
