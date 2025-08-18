@@ -8,7 +8,7 @@ Your philosophical feedback identifies critical gaps in our current coalition an
 
 ### Existing Pipeline Dependencies
 **Current Data Flow**: `CVR → ballots_long → analysis views → coalition calculations`
-- ✅ **Smart Caching**: `_is_ballots_long_current()` prevents unnecessary recomputation  
+- ✅ **Smart Caching**: `_is_ballots_long_current()` prevents unnecessary recomputation
 - ✅ **Real-time Computation**: All coalition analysis computed on-demand from `ballots_long`
 - ✅ **SQL Views**: Basic analysis precomputed (first_choice_totals, votes_by_rank, etc.)
 - ✅ **No Heavy Precomputation**: Current approach avoids pipeline complexity
@@ -18,14 +18,14 @@ The sophisticated statistical controls you've outlined can be implemented as **r
 
 ## Implementation Strategy: Toggle-First Architecture
 
-### Phase 1: Methodology Toggles (Zero Pipeline Impact) 
+### Phase 1: Methodology Toggles (Zero Pipeline Impact)
 
 **Real-time API Parameter Toggles**:
 ```javascript
 // Example: /api/coalition/pairs?method=proximity_weighted&normalize=lift&ci=bootstrap
 {
   "method": "basic" | "proximity_weighted" | "directional",
-  "normalize": "raw" | "conditional" | "lift", 
+  "normalize": "raw" | "conditional" | "lift",
   "confidence_intervals": false | "bootstrap" | "analytical",
   "min_shared_ballots": 200,
   "ballot_length_filter": false | true,
@@ -41,7 +41,7 @@ The sophisticated statistical controls you've outlined can be implemented as **r
    - Add `lift = P(A∧B)/[P(A)P(B)]` option
    - "Excess proximity" = observed - expected under independence
 
-2. **Directional & Local Proximity** ⚡ *Zero pipeline impact*  
+2. **Directional & Local Proximity** ⚡ *Zero pipeline impact*
    - Track `A→B` vs `B→A` as distinct relationships
    - Implement proximity kernel: `S_A,B = Σ w(d) * P(B at r+d | A at r)`
    - Distance-specific analysis: "A at rank r, B at r+1" vs "A at rank r, B at r+2"
@@ -61,19 +61,19 @@ The sophisticated statistical controls you've outlined can be implemented as **r
 **New SQL Views** (add to `04_basic_analysis.sql`):
 ```sql
 -- Ballot metadata for truncation controls
-CREATE OR REPLACE VIEW ballot_metadata AS 
-SELECT BallotID, COUNT(*) as ballot_length, 
-       MAX(rank_position) as max_rank 
+CREATE OR REPLACE VIEW ballot_metadata AS
+SELECT BallotID, COUNT(*) as ballot_length,
+       MAX(rank_position) as max_rank
 FROM ballots_long GROUP BY BallotID;
 
--- Rank transition pairs for directional analysis  
+-- Rank transition pairs for directional analysis
 CREATE OR REPLACE VIEW rank_transitions AS
-SELECT b1.BallotID, b1.candidate_id as from_candidate, 
-       b2.candidate_id as to_candidate, 
+SELECT b1.BallotID, b1.candidate_id as from_candidate,
+       b2.candidate_id as to_candidate,
        b1.rank_position as from_rank,
-       b2.rank_position as to_rank 
-FROM ballots_long b1 
-JOIN ballots_long b2 ON b1.BallotID = b2.BallotID 
+       b2.rank_position as to_rank
+FROM ballots_long b1
+JOIN ballots_long b2 ON b1.BallotID = b2.BallotID
                     AND b2.rank_position = b1.rank_position + 1;
 ```
 
@@ -100,7 +100,7 @@ Of ballots that ranked A anywhere, what % had B immediately after A?
 Reads like: "A's people usually go to B."
 ```
 
-### 2. "Close-Together Rate" (A & B)  
+### 2. "Close-Together Rate" (A & B)
 ```
 % of ballots that list both A and B within the top 3 spots (in any order).
 Reads like: "same lane / similar vibe."
@@ -116,7 +116,7 @@ Reads like: "did the affection turn into action?"
 
 ### Interpretable Metrics (Runtime Calculation)
 - **Immediate-follow index**: `P(B immediately after A)` for "ticket" behavior
-- **Top-k mutuality**: Share with both in top-k and `|rankA-rankB|≤1`  
+- **Top-k mutuality**: Share with both in top-k and `|rankA-rankB|≤1`
 - **Fallbackiness score**: Share of A-first ballots where B appears at lower rank
 - **Excess transfer**: Realized A→B / proximity-predicted transfer
 
@@ -142,7 +142,7 @@ fi
 ### Schema Version Tracking
 ```sql
 CREATE OR REPLACE TABLE schema_versions AS
-SELECT 'coalition_analysis_v2' as feature, 
+SELECT 'coalition_analysis_v2' as feature,
        'proximity_weighted_directional' as version,
        CURRENT_TIMESTAMP as installed_at;
 ```
@@ -156,7 +156,7 @@ SELECT 'coalition_analysis_v2' as feature,
 - ✅ Bootstrap CI toggle (computed on-demand)
 - **Zero pipeline changes required**
 
-### Week 2: Enhanced Views & Directional Analysis  
+### Week 2: Enhanced Views & Directional Analysis
 - Add `ballot_metadata` and `rank_transitions` views to `04_basic_analysis.sql`
 - Implement directional proximity analysis with A→B vs B→A tracking
 - Add proximity kernel scoring with distance weighting
@@ -170,7 +170,7 @@ SELECT 'coalition_analysis_v2' as feature,
 
 ### Week 4: User Experience & Documentation
 - Simplified UI with 3-question framework
-- Advanced toggle explanations and educational content  
+- Advanced toggle explanations and educational content
 - Pipeline trigger documentation and automation
 - Performance tier options (basic/advanced/power user)
 
@@ -185,7 +185,7 @@ Users can experiment and see immediate impact:
 
 ### Performance Tiers
 - **Basic Tier**: Real-time toggles (200-500ms response)
-- **Enhanced Tier**: Light precomputation (50-200ms response)  
+- **Enhanced Tier**: Light precomputation (50-200ms response)
 - **Power User**: Full cache (sub-50ms response)
 
 ### Zero-Surprise Pipeline Management
@@ -202,7 +202,7 @@ Users can experiment and see immediate impact:
 - Progressive enhancement approach
 - Existing UI continues working during development
 
-### Risk Mitigation  
+### Risk Mitigation
 - Phase 1 has zero breaking changes
 - Toggle approach allows A/B testing
 - Incremental rollout with user feedback
