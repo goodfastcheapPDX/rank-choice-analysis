@@ -269,8 +269,13 @@ class CoalitionAnalyzer:
             proximity_weights = [1.0 / (1 + d) for d in distances]  # Closer = higher weight
             proximity_weighted_affinity = sum(proximity_weights) / len(distances) if distances else 0.0
             
-            # Coalition strength combines affinity with proximity
-            coalition_strength = (basic_affinity + proximity_weighted_affinity) / 2
+            # Coalition strength: weight proximity more heavily than basic co-occurrence
+            # This emphasizes HOW CLOSE candidates are ranked when they do appear together
+            coalition_strength = (basic_affinity * 0.2) + (proximity_weighted_affinity * 0.8)
+            
+            # Debug logging for first few pairs
+            if len(detailed_pairs) < 5:
+                logger.info(f"Debug pair {name1} & {name2}: basic_affinity={basic_affinity:.4f}, proximity_weighted={proximity_weighted_affinity:.4f}, coalition_strength={coalition_strength:.4f}, avg_distance={avg_distance:.2f}")
             
             # Classify coalition type
             coalition_type = self._classify_coalition_type(avg_distance, strong_votes, weak_votes, shared_ballots)

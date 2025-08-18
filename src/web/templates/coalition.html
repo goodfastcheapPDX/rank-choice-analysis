@@ -4,6 +4,241 @@
 
 {% block styles %}
 <style>
+/* Introduction Panel Styles */
+.introduction-panel {
+    background: #f0f8f0;
+    border: 1px solid #d4edda;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+    border-left: 4px solid #28a745;
+}
+
+.introduction-panel h4 {
+    color: #155724;
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.introduction-panel h5 {
+    color: #155724;
+    margin-top: 1.2rem;
+    margin-bottom: 0.8rem;
+    font-size: 1rem;
+}
+
+.introduction-panel p {
+    color: #3d5a40;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+.introduction-panel ul {
+    color: #3d5a40;
+    line-height: 1.6;
+    margin-left: 1.2rem;
+}
+
+.introduction-panel li {
+    margin-bottom: 0.5rem;
+}
+
+.introduction-panel strong {
+    color: #155724;
+    font-weight: 600;
+}
+
+/* Explanation Panel Styles */
+.explanation-panel {
+    background: #f8f9ff;
+    border: 1px solid #e1e5f0;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid #3498db;
+}
+
+.explanation-panel h4 {
+    color: #2c3e50;
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.explanation-panel h5 {
+    color: #34495e;
+    margin-top: 1.5rem;
+    margin-bottom: 0.8rem;
+    font-size: 1rem;
+}
+
+.explanation-panel p {
+    color: #5a6c7d;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+.explanation-panel ul {
+    color: #5a6c7d;
+    line-height: 1.6;
+    margin-left: 1.2rem;
+}
+
+.explanation-panel li {
+    margin-bottom: 0.5rem;
+}
+
+.explanation-panel strong {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.visual-guide, .interaction-guide, .examples-section, .interpretation-guide {
+    margin-top: 1.5rem;
+}
+
+.examples-section {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.interpretation-guide {
+    background: #d1ecf1;
+    border: 1px solid #bee5eb;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.coalition-types-guide {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.type-explanation {
+    background: white;
+    border: 1px solid #e1e5f0;
+    border-radius: 6px;
+    padding: 1rem;
+}
+
+.type-explanation h5 {
+    margin-top: 0;
+    margin-bottom: 0.8rem;
+    font-size: 0.95rem;
+}
+
+.type-explanation p {
+    margin-bottom: 0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.definitions-section {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.example-calculation {
+    background: #e3f2fd;
+    border: 1px solid #bbdefb;
+    border-radius: 4px;
+    padding: 1rem;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+.example-calculation h6 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    color: #1565c0;
+    font-size: 0.95rem;
+}
+
+.example-calculation p {
+    margin-bottom: 0.5rem;
+    color: #424242;
+}
+
+.example-calculation ul {
+    margin-bottom: 0;
+    color: #424242;
+}
+
+.cluster-note {
+    background: #fff3e0;
+    border: 1px solid #ffcc02;
+    border-radius: 4px;
+    padding: 0.8rem;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+.cluster-note p {
+    margin-bottom: 0;
+    color: #bf5700;
+}
+
+.context-note {
+    background: #f0f7ff;
+    border: 1px solid #4dabf7;
+    border-radius: 4px;
+    padding: 0.8rem;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+.context-note p {
+    margin-bottom: 0;
+    color: #1971c2;
+}
+
+.table-explanations {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.column-explanation, .split-explanation {
+    background: white;
+    border: 1px solid #e1e5f0;
+    border-radius: 6px;
+    padding: 1rem;
+}
+
+.column-explanation h6, .split-explanation h6 {
+    margin-top: 0;
+    margin-bottom: 0.8rem;
+    color: #2c3e50;
+    font-size: 0.95rem;
+}
+
+.column-explanation ul, .split-explanation ul {
+    margin-bottom: 0;
+    font-size: 0.9rem;
+}
+
+.column-explanation li, .split-explanation li {
+    margin-bottom: 0.4rem;
+}
+
+@media (max-width: 768px) {
+    .table-explanations {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+}
+
 /* Cluster Visualization Styles */
 .cluster-controls {
     background: #f0f4ff;
@@ -179,6 +414,17 @@
     background: #95a5a6;
 }
 
+.legend-edge.strategic {
+    background: #9b59b6;
+    background-image: repeating-linear-gradient(
+        45deg,
+        #9b59b6,
+        #9b59b6 3px,
+        transparent 3px,
+        transparent 6px
+    );
+}
+
 /* Network node and edge styles */
 .network-node {
     cursor: pointer;
@@ -259,11 +505,52 @@
 <div class="card">
     <h2>🤝 Coalition Analysis Dashboard</h2>
     <p>Explore candidate coalitions, voter preferences, and ranking proximity patterns in the Portland City Council District 2 election.</p>
+    
+    <div class="introduction-panel">
+        <h4>💡 What You'll Discover Here</h4>
+        <p>Coalition analysis reveals the hidden relationships between candidates based on how voters actually ranked them. When voters consistently rank two candidates near each other on their ballots, it suggests these candidates have similar appeal or aligned political positions.</p>
+        
+        <div class="key-insights">
+            <h5>Key Questions This Analysis Answers:</h5>
+            <ul>
+                <li><strong>Which candidates worked together effectively?</strong> Identify natural political alliances</li>
+                <li><strong>How did winning candidates build coalitions?</strong> See what made the winners successful</li>
+                <li><strong>Where do voters see similarities?</strong> Understand voter perception of candidate relationships</li>
+                <li><strong>What are the major political groupings?</strong> Discover the election's coalition landscape</li>
+            </ul>
+        </div>
+        
+        <p><strong>💻 Interactive Features:</strong> Use the controls throughout this page to adjust analysis parameters and explore different perspectives on the coalition data. Each visualization offers unique insights into Portland's ranked-choice election dynamics.</p>
+    </div>
 </div>
 
 <!-- Coalition Type Overview -->
 <div class="card">
     <h2>Coalition Type Distribution</h2>
+    <p>Overview of different coalition strength levels found in the Portland election data.</p>
+    
+    <div class="explanation-panel">
+        <h4>Coalition Strength Types Explained</h4>
+        <div class="coalition-types-guide">
+            <div class="type-explanation">
+                <h5>🟢 Strong Coalitions</h5>
+                <p>Candidates whose supporters consistently rank them very close together (usually within 1-2 positions). These represent the tightest political alliances.</p>
+            </div>
+            <div class="type-explanation">
+                <h5>🟡 Moderate Coalitions</h5>
+                <p>Candidates with meaningful but less intense relationships. Supporters tend to rank them in similar ranges but with more variation.</p>
+            </div>
+            <div class="type-explanation">
+                <h5>⚪ Weak Coalitions</h5>
+                <p>Candidates with loose connections. Some voters see similarities, but ranking patterns are inconsistent.</p>
+            </div>
+            <div class="type-explanation">
+                <h5>🟣 Strategic Coalitions</h5>
+                <p>Unusual patterns where candidates appear both close and far apart on different ballots, suggesting tactical voting or diverse appeal.</p>
+            </div>
+        </div>
+    </div>
+    
     <div id="coalition-type-loading" class="loading">Loading coalition type breakdown...</div>
     <div id="coalition-type-content" style="display: none;">
         <div id="coalition-type-chart"></div>
@@ -276,6 +563,32 @@
 <div class="card">
     <h2>Strongest Coalition Pairs</h2>
     <p>Candidate pairs ranked by coalition strength (combination of affinity and ranking proximity)</p>
+    
+    <div class="explanation-panel">
+        <h4>Understanding the Coalition Pairs Table</h4>
+        <div class="table-explanations">
+            <div class="column-explanation">
+                <h6>📊 Column Definitions:</h6>
+                <ul>
+                    <li><strong>Shared Ballots</strong>: Number of voters who ranked both candidates somewhere on their ballot</li>
+                    <li><strong>Avg Distance</strong>: Average ranking positions apart (lower = closer together)</li>
+                    <li><strong>Coalition Strength</strong>: Combined score based on how often and how closely candidates are ranked together</li>
+                    <li><strong>Close/Distant Ranking Split</strong>: Shows voting pattern consistency</li>
+                </ul>
+            </div>
+            <div class="split-explanation">
+                <h6>🔍 Close/Distant Ranking Split Explained:</h6>
+                <p>This shows how voters actually ranked these candidates together:</p>
+                <ul>
+                    <li><strong>Close Rankings (≤2 apart)</strong>: Voters who put both candidates in similar positions (e.g., #1 & #2, or #2 & #4)</li>
+                    <li><strong>Distant Rankings (≥4 apart)</strong>: Voters who ranked them far apart (e.g., #1 & #5, or #2 & #6)</li>
+                    <li><strong>High close, low distant</strong>: Strong, consistent coalition</li>
+                    <li><strong>Mixed close/distant</strong>: More complex voter relationship</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
     <div id="top-pairs-loading" class="loading">Loading top coalition pairs...</div>
     <div id="top-pairs-content" style="display: none;">
         <table id="top-pairs-table">
@@ -287,7 +600,7 @@
                     <th>Shared Ballots</th>
                     <th>Avg Distance</th>
                     <th>Coalition Strength</th>
-                    <th>Strong/Weak Split</th>
+                    <th>Close/Distant Split</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -310,6 +623,35 @@
 <div class="card">
     <h2>🎯 Detected Coalition Groups</h2>
     <p>Automatically detected coalition clusters based on strong relationships between candidates</p>
+    
+    <div class="explanation-panel">
+        <h4>What are Coalition Groups?</h4>
+        <p>Coalition groups are candidates whose supporters tend to rank them similarly on their ballots. When voters consistently rank two candidates close together (like both in their top 3), it suggests these candidates appeal to similar voter bases or have aligned political positions.</p>
+        
+        <div class="examples-section">
+            <h5>💡 Interactive Tips:</h5>
+            <ul>
+                <li><strong>Lower "Min Coalition Strength" (0.1-0.15)</strong>: Find more groups, including loose alliances where candidates are sometimes ranked together</li>
+                <li><strong>Higher "Min Coalition Strength" (0.3-0.4)</strong>: Only very tight-knit candidate groups where voters consistently ranked them close together</li>
+                <li><strong>Smaller "Min Group Size" (2-3)</strong>: See pairs and small alliances</li>
+                <li><strong>Larger "Min Group Size" (4-5)</strong>: Only major political coalitions with many connected candidates</li>
+            </ul>
+            
+            <div class="cluster-note">
+                <p><strong>📝 Note:</strong> Groups are formed by connecting candidates who share enough ballots and have sufficient coalition strength, then finding all connected candidates in the network.</p>
+            </div>
+        </div>
+        
+        <div class="interpretation-guide">
+            <h5>🔍 How to Read the Results:</h5>
+            <ul>
+                <li><strong>Groups with 🏆</strong>: Contain winning candidates - successful coalitions</li>
+                <li><strong>Group Size</strong>: Number of candidates who voters tend to rank together</li>
+                <li><strong>Strength Score</strong>: How consistently voters rank these candidates close together (higher = stronger alliance)</li>
+                <li><strong>Red candidate chips</strong>: Winners who formed effective coalitions</li>
+            </ul>
+        </div>
+    </div>
     
     <div class="cluster-controls">
         <div class="control-group">
@@ -337,16 +679,89 @@
     <h2>🕸️ Interactive Coalition Network</h2>
     <p>Explore candidate relationships as an interactive network graph. Node size represents weighted voter preference (1st choice = 6 points, 2nd = 5 points, etc.), edge thickness represents coalition strength. <strong>Use mouse wheel to zoom, drag to pan, click nodes to highlight connections.</strong></p>
     
+    <div class="explanation-panel">
+        <h4>Understanding the Network</h4>
+        <p>This network shows how candidates relate to each other based on real voter behavior. Each circle (node) is a candidate, and lines (edges) connect candidates whose supporters ranked them similarly.</p>
+        
+        <div class="visual-guide">
+            <h5>📊 What the Sizes and Colors Mean:</h5>
+            <ul>
+                <li><strong>Large circles</strong>: Candidates with high voter preference scores across all ranking positions</li>
+                <li><strong>Small circles</strong>: Candidates with fewer high rankings from voters</li>
+                <li><strong>Red circles</strong>: The three winning candidates (Elana Pirtle-Guiney, Dan Ryan, Sameer Kanal)</li>
+                <li><strong>Blue circles</strong>: All other candidates</li>
+                <li><strong>Thick lines</strong>: Strong coalition relationships (voters often ranked these candidates together)</li>
+                <li><strong>Thin lines</strong>: Weaker coalition relationships</li>
+            </ul>
+        </div>
+        
+        <div class="interaction-guide">
+            <h5>🎮 How to Explore:</h5>
+            <ul>
+                <li><strong>Click any candidate</strong>: Highlights their coalition network and dims others</li>
+                <li><strong>Hover over candidates</strong>: See their weighted preference score and connection count</li>
+                <li><strong>Hover over lines</strong>: See detailed coalition information between two candidates</li>
+                <li><strong>Zoom in/out</strong>: Mouse wheel to focus on specific areas or see the big picture</li>
+                <li><strong>Drag to pan</strong>: Move around the network to explore different regions</li>
+            </ul>
+        </div>
+        
+        <div class="definitions-section">
+            <h5>📖 Key Terms:</h5>
+            <ul>
+                <li><strong>"Shared Ballots"</strong>: Ballots where both candidates appear (are ranked at any position). For example, if 150 voters ranked both Candidate A and Candidate B somewhere on their ballot, that's 150 shared ballots.</li>
+                <li><strong>"Coalition Strength"</strong>: How close together candidates were ranked on their shared ballots. Higher values mean voters consistently ranked them near each other (like both in top 3).</li>
+                <li><strong>"Min Shared Ballots"</strong>: Only show connections between candidates if at least this many voters ranked both of them.</li>
+            </ul>
+            
+            <div class="example-calculation">
+                <h6>🧮 Example:</h6>
+                <p>If you see a line between Candidate A and B with "Coalition Strength: 0.15" and your filter is set to "Min Shared Ballots: 100", this means:</p>
+                <ul>
+                    <li>At least 100 ballots ranked <strong>both</strong> A and B (anywhere on the ballot)</li>
+                    <li>On those shared ballots, A and B were ranked close enough together to create a 0.15 strength score</li>
+                    <li>For example: many voters put A as #2 and B as #3, or A as #1 and B as #4, etc.</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="examples-section">
+            <h5>💡 Try These Experiments:</h5>
+            <ul>
+                <li><strong>Lower "Coalition Strength" to 0.15</strong>: See more connections, including looser alliances</li>
+                <li><strong>Raise "Coalition Strength" to 0.4</strong>: Only the very strongest political partnerships</li>
+                <li><strong>Lower "Min Shared Ballots" to 100</strong>: Include relationships from smaller voter groups</li>
+                <li><strong>Raise "Min Shared Ballots" to 300</strong>: Only show relationships supported by very large numbers of voters</li>
+                <li><strong>Filter by "Strong Only"</strong>: Focus on the most significant political alliances</li>
+                <li><strong>Click on a winner (red circle)</strong>: See which other candidates formed coalitions with Portland's elected officials</li>
+            </ul>
+            
+            <div class="context-note">
+                <p><strong>📊 Why These Defaults?</strong> In a 20+ candidate race, appearing together on any ballot is meaningful. The default thresholds (200 shared ballots, 0.25 strength) are calibrated to show significant relationships while filtering out statistical noise.</p>
+            </div>
+        </div>
+        
+        <div class="interpretation-guide">
+            <h5>🔍 What Patterns to Look For:</h5>
+            <ul>
+                <li><strong>Clustered groups</strong>: Candidates positioned close together represent political coalitions</li>
+                <li><strong>Central vs. peripheral candidates</strong>: Those with many connections vs. those on the edges</li>
+                <li><strong>Bridge candidates</strong>: Those connecting different groups, showing broad appeal</li>
+                <li><strong>Isolated candidates</strong>: Those with few connections, representing unique political positions</li>
+            </ul>
+        </div>
+    </div>
+    
     <div class="network-controls">
         <div class="control-group">
             <label for="strength-threshold">Coalition Strength Threshold:</label>
-            <input type="range" id="strength-threshold" min="0" max="1" step="0.05" value="0.1">
-            <span id="strength-value">0.10</span>
+            <input type="range" id="strength-threshold" min="0" max="1" step="0.05" value="0.25">
+            <span id="strength-value">0.25</span>
         </div>
         <div class="control-group">
             <label for="ballots-threshold">Min Shared Ballots:</label>
-            <input type="range" id="ballots-threshold" min="50" max="500" step="25" value="100">
-            <span id="ballots-value">100</span>
+            <input type="range" id="ballots-threshold" min="50" max="500" step="25" value="200">
+            <span id="ballots-value">200</span>
         </div>
         <div class="control-group">
             <label for="coalition-filter">Coalition Type:</label>
@@ -387,6 +802,10 @@
             <div class="legend-item">
                 <div class="legend-edge weak"></div>
                 <span>Weak Coalition</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-edge strategic"></div>
+                <span>Strategic Coalition</span>
             </div>
         </div>
     </div>
@@ -472,10 +891,15 @@ document.addEventListener('DOMContentLoaded', async function() {
 async function loadCandidates() {
     try {
         const data = await fetchData('/api/candidates');
-        candidates = data.candidates;
+        candidates = data; // API returns candidates array directly
         
         const candidate1Select = document.getElementById('candidate1-select');
         const candidate2Select = document.getElementById('candidate2-select');
+        
+        if (!candidate1Select || !candidate2Select) {
+            console.error('Candidate select elements not found');
+            return;
+        }
         
         candidate1Select.innerHTML = '<option value="">Select first candidate...</option>';
         candidate2Select.innerHTML = '<option value="">Select second candidate...</option>';
@@ -486,8 +910,15 @@ async function loadCandidates() {
             candidate1Select.add(option1);
             candidate2Select.add(option2);
         });
+        
+        console.log(`Loaded ${candidates.length} candidates into dropdowns`);
     } catch (error) {
         console.error('Error loading candidates:', error);
+        // Show error in dropdowns
+        const candidate1Select = document.getElementById('candidate1-select');
+        const candidate2Select = document.getElementById('candidate2-select');
+        if (candidate1Select) candidate1Select.innerHTML = '<option value="">Error loading candidates</option>';
+        if (candidate2Select) candidate2Select.innerHTML = '<option value="">Error loading candidates</option>';
     }
 }
 
@@ -730,7 +1161,7 @@ let simulation = null;
 async function loadNetworkVisualization() {
     try {
         document.getElementById('network-loading').style.display = 'block';
-        networkData = await fetchData('/api/coalition/network?min_shared_ballots=100&min_strength=0.1');
+        networkData = await fetchData('/api/coalition/network?min_shared_ballots=200&min_strength=0.25');
         
         console.log('Network data loaded:', {
             nodes: networkData?.nodes?.length,
@@ -1035,10 +1466,10 @@ function resetNetwork() {
     }
     
     // Reset controls
-    document.getElementById('strength-threshold').value = 0.1;
-    document.getElementById('strength-value').textContent = '0.10';
-    document.getElementById('ballots-threshold').value = 100;
-    document.getElementById('ballots-value').textContent = '100';
+    document.getElementById('strength-threshold').value = 0.25;
+    document.getElementById('strength-value').textContent = '0.25';
+    document.getElementById('ballots-threshold').value = 200;
+    document.getElementById('ballots-value').textContent = '200';
     document.getElementById('coalition-filter').value = 'all';
     
     // Reload network

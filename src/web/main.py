@@ -731,7 +731,7 @@ async def get_coalition_type_breakdown():
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
 @app.get("/api/coalition/network")
-async def get_coalition_network_data(min_shared_ballots: int = 100, min_strength: float = 0.1):
+async def get_coalition_network_data(min_shared_ballots: int = 200, min_strength: float = 0.25):
     """Get network graph data for coalition visualization."""
     database = get_database()
     if not database or not database.table_exists("ballots_long"):
@@ -778,6 +778,17 @@ async def get_coalition_network_data(min_shared_ballots: int = 100, min_strength
         
         # Get detailed pairs for edges
         detailed_pairs = analyzer.calculate_detailed_pairwise_analysis(min_shared_ballots=min_shared_ballots)
+        
+        # Debug: Log coalition strength distribution
+        if detailed_pairs:
+            strengths = [pair.coalition_strength_score for pair in detailed_pairs]
+            logger.info(f"Coalition strength debug - Min: {min(strengths):.4f}, Max: {max(strengths):.4f}, Avg: {sum(strengths)/len(strengths):.4f}")
+            logger.info(f"Total pairs analyzed: {len(detailed_pairs)}, Pairs above threshold {min_strength}: {len([p for p in detailed_pairs if p.coalition_strength_score >= min_strength])}")
+            
+            # Sample some pairs for detailed inspection
+            sample_pairs = sorted(detailed_pairs, key=lambda x: x.coalition_strength_score, reverse=True)[:5]
+            for i, pair in enumerate(sample_pairs):
+                logger.info(f"Sample {i+1}: {pair.candidate_1_name} & {pair.candidate_2_name} - Strength: {pair.coalition_strength_score:.4f}, Shared: {pair.shared_ballots}, Avg Distance: {pair.avg_ranking_distance:.2f}")
         
         # Create edges data
         edges = []
