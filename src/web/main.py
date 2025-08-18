@@ -1033,6 +1033,247 @@ async def get_candidate_comparison(candidate_id: int, other_candidate_id: int):
         logger.error(f"Candidate comparison failed for {candidate_id} vs {other_candidate_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
+@app.get("/api/candidates/{candidate_id}/ballot-journey")
+async def get_candidate_ballot_journey(candidate_id: int):
+    """Get detailed ballot journey analysis for a candidate."""
+    database = get_database()
+    if not database or not database.table_exists("ballots_long"):
+        raise HTTPException(status_code=400, detail="No data loaded")
+    
+    try:
+        metrics_analyzer = CandidateMetrics(database)
+        journey_data = metrics_analyzer.get_ballot_journey_analysis(candidate_id)
+        
+        if not journey_data:
+            raise HTTPException(status_code=404, detail="Candidate not found")
+        
+        # Convert dataclass to dict for JSON serialization
+        journey_dict = {
+            "candidate_id": journey_data.candidate_id,
+            "candidate_name": journey_data.candidate_name,
+            "ballot_flows": journey_data.ballot_flows,
+            "round_summaries": journey_data.round_summaries,
+            "transfer_patterns": journey_data.transfer_patterns,
+            "retention_analysis": journey_data.retention_analysis
+        }
+        
+        return convert_numpy_types(journey_dict)
+    except Exception as e:
+        logger.error(f"Ballot journey analysis failed for {candidate_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+@app.get("/api/candidates/{candidate_id}/supporter-segments")
+async def get_candidate_supporter_segments(candidate_id: int):
+    """Get supporter segmentation analysis for a candidate."""
+    database = get_database()
+    if not database or not database.table_exists("ballots_long"):
+        raise HTTPException(status_code=400, detail="No data loaded")
+    
+    try:
+        metrics_analyzer = CandidateMetrics(database)
+        segmentation_data = metrics_analyzer.get_supporter_segmentation_analysis(candidate_id)
+        
+        if not segmentation_data:
+            raise HTTPException(status_code=404, detail="Candidate not found")
+        
+        # Convert dataclass to dict for JSON serialization
+        segmentation_dict = {
+            "candidate_id": segmentation_data.candidate_id,
+            "candidate_name": segmentation_data.candidate_name,
+            "archetypes": [
+                {
+                    "archetype_name": archetype.archetype_name,
+                    "ballot_count": archetype.ballot_count,
+                    "percentage": archetype.percentage,
+                    "characteristics": archetype.characteristics,
+                    "sample_ballots": archetype.sample_ballots
+                }
+                for archetype in segmentation_data.archetypes
+            ],
+            "clustering_analysis": segmentation_data.clustering_analysis,
+            "preference_patterns": segmentation_data.preference_patterns
+        }
+        
+        return convert_numpy_types(segmentation_dict)
+    except Exception as e:
+        logger.error(f"Supporter segmentation failed for {candidate_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+@app.get("/api/candidates/{candidate_id}/similarity")
+async def get_candidate_similarity(candidate_id: int, limit: int = 10):
+    """Find candidates with similar supporter profiles and ranking patterns."""
+    database = get_database()
+    if not database or not database.table_exists("ballots_long"):
+        raise HTTPException(status_code=400, detail="No data loaded")
+    
+    try:
+        # Get the target candidate's supporter profile
+        metrics_analyzer = CandidateMetrics(database)
+        target_segmentation = metrics_analyzer.get_supporter_segmentation_analysis(candidate_id)
+        
+        if not target_segmentation:
+            raise HTTPException(status_code=404, detail="Candidate not found")
+        
+        # Get all candidates for comparison
+        candidates = database.query_with_retry(f"""
+            SELECT candidate_id, candidate_name FROM candidates 
+            WHERE candidate_id != {candidate_id}
+        """)
+        
+        similarity_scores = []
+        
+        for _, candidate in candidates.iterrows():
+            other_id = candidate['candidate_id']
+            other_name = candidate['candidate_name']
+            
+            # Calculate similarity based on supporter archetypes
+            other_segmentation = metrics_analyzer.get_supporter_segmentation_analysis(other_id)
+            
+            if other_segmentation:
+                # Simple similarity calculation based on archetype percentages
+                target_archetypes = {arch.archetype_name: arch.percentage for arch in target_segmentation.archetypes}
+                other_archetypes = {arch.archetype_name: arch.percentage for arch in other_segmentation.archetypes}
+                
+                # Calculate Euclidean distance between archetype distributions
+                archetype_names = set(target_archetypes.keys()) | set(other_archetypes.keys())
+                distance = 0
+                for name in archetype_names:
+                    target_pct = target_archetypes.get(name, 0)
+                    other_pct = other_archetypes.get(name, 0)
+                    distance += (target_pct - other_pct) ** 2
+                
+                similarity = max(0, 100 - (distance ** 0.5))  # Convert distance to similarity score
+                
+                similarity_scores.append({
+                    "candidate_id": other_id,
+                    "candidate_name": other_name,
+                    "similarity_score": round(similarity, 2),
+                    "shared_archetypes": list(set(target_archetypes.keys()) & set(other_archetypes.keys())),
+                    "archetype_comparison": {
+                        "target": target_archetypes,
+                        "other": other_archetypes
+                    }
+                })
+        
+        # Sort by similarity score and limit results
+        similarity_scores.sort(key=lambda x: x['similarity_score'], reverse=True)
+        top_similar = similarity_scores[:limit]
+        
+        return convert_numpy_types({
+            "candidate_id": candidate_id,
+            "candidate_name": target_segmentation.candidate_name,
+            "similar_candidates": top_similar,
+            "analysis_method": "archetype_distribution_similarity"
+        })
+        
+    except Exception as e:
+        logger.error(f"Candidate similarity analysis failed for {candidate_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+@app.get("/api/candidates/{candidate_id}/round-progression")
+async def get_candidate_round_progression(candidate_id: int, seats: int = 3):
+    """Get detailed round-by-round progression for a candidate through STV."""
+    database = get_database()
+    if not database or not database.table_exists("ballots_long"):
+        raise HTTPException(status_code=400, detail="No data loaded")
+    
+    try:
+        # Run STV with detailed tracking to get actual round progression
+        tabulator = STVTabulator(database, seats=seats, detailed_tracking=True)
+        rounds = tabulator.run_stv_tabulation()
+        
+        vote_flow = tabulator.get_vote_flow()
+        if not vote_flow:
+            raise HTTPException(status_code=500, detail="Vote flow tracking failed")
+        
+        # Extract progression data for the specific candidate
+        candidate_progression = []
+        
+        for round_data in vote_flow.rounds:
+            if candidate_id in round_data.vote_totals:
+                round_info = {
+                    "round_number": round_data.round_number,
+                    "vote_total": round_data.vote_totals.get(candidate_id, 0),
+                    "quota": round_data.quota,
+                    "is_continuing": candidate_id in round_data.continuing_candidates,
+                    "is_winner_this_round": candidate_id in round_data.winners_this_round,
+                    "is_eliminated_this_round": candidate_id in round_data.eliminated_this_round,
+                    "vote_change": 0,  # Will calculate below
+                    "transfers_in": [],
+                    "transfers_out": []
+                }
+                
+                # Calculate vote change from previous round
+                if candidate_progression:
+                    prev_votes = candidate_progression[-1]["vote_total"]
+                    round_info["vote_change"] = round_info["vote_total"] - prev_votes
+                
+                candidate_progression.append(round_info)
+        
+        # Add transfer details
+        for transfer in vote_flow.transfer_patterns:
+            if transfer.to_candidate == candidate_id:
+                # Find the corresponding round
+                for round_info in candidate_progression:
+                    if round_info["round_number"] == transfer.round_number:
+                        round_info["transfers_in"].append({
+                            "from_candidate": transfer.from_candidate,
+                            "from_candidate_name": transfer.from_candidate_name,
+                            "votes_transferred": transfer.votes_transferred,
+                            "transfer_type": transfer.transfer_type
+                        })
+            
+            elif transfer.from_candidate == candidate_id:
+                # Find the corresponding round
+                for round_info in candidate_progression:
+                    if round_info["round_number"] == transfer.round_number:
+                        round_info["transfers_out"].append({
+                            "to_candidate": transfer.to_candidate,
+                            "to_candidate_name": transfer.to_candidate_name,
+                            "votes_transferred": transfer.votes_transferred,
+                            "transfer_type": transfer.transfer_type
+                        })
+        
+        # Get candidate name
+        candidate_query = database.query_with_retry(f"""
+            SELECT candidate_name FROM candidates WHERE candidate_id = {candidate_id}
+        """)
+        candidate_name = (candidate_query.iloc[0]['candidate_name'] 
+                         if not candidate_query.empty else f"Candidate {candidate_id}")
+        
+        return convert_numpy_types({
+            "candidate_id": candidate_id,
+            "candidate_name": candidate_name,
+            "round_progression": candidate_progression,
+            "final_status": "winner" if any(r["is_winner_this_round"] for r in candidate_progression) else "eliminated",
+            "elimination_round": next((r["round_number"] for r in candidate_progression if r["is_eliminated_this_round"]), None),
+            "max_votes": max((r["vote_total"] for r in candidate_progression), default=0),
+            "total_rounds": len(candidate_progression)
+        })
+        
+    except Exception as e:
+        logger.error(f"Round progression analysis failed for {candidate_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+@app.get("/api/candidates/{candidate_id}/coalition-centrality")
+async def get_candidate_coalition_centrality(candidate_id: int):
+    """Get coalition network centrality analysis for a candidate."""
+    database = get_database()
+    if not database or not database.table_exists("ballots_long"):
+        raise HTTPException(status_code=400, detail="No data loaded")
+    
+    try:
+        metrics_analyzer = CandidateMetrics(database)
+        centrality_data = metrics_analyzer.get_coalition_centrality_analysis(candidate_id)
+        
+        if "error" in centrality_data:
+            raise HTTPException(status_code=404, detail=centrality_data["error"])
+        
+        return convert_numpy_types(centrality_data)
+    except Exception as e:
+        logger.error(f"Coalition centrality analysis failed for {candidate_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

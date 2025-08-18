@@ -56,6 +56,34 @@ class VoterBehaviorAnalysis:
     consistency_score: float
     polarization_index: float
 
+@dataclass
+class BallotJourneyData:
+    """Tracks how ballots that ranked a candidate moved through STV rounds."""
+    candidate_id: int
+    candidate_name: str
+    ballot_flows: List[Dict[str, Any]]  # Individual ballot journeys
+    round_summaries: List[Dict[str, Any]]  # Summary by round
+    transfer_patterns: List[Dict[str, Any]]  # Where votes went
+    retention_analysis: Dict[str, Any]  # How many votes stayed vs transferred
+
+@dataclass
+class SupporterArchetype:
+    """Analysis of different types of supporters for a candidate."""
+    archetype_name: str
+    ballot_count: int
+    percentage: float
+    characteristics: Dict[str, Any]
+    sample_ballots: List[str]  # Sample ballot IDs
+
+@dataclass
+class SupporterSegmentation:
+    """Comprehensive supporter segmentation analysis."""
+    candidate_id: int
+    candidate_name: str
+    archetypes: List[SupporterArchetype]
+    clustering_analysis: Dict[str, Any]
+    preference_patterns: Dict[str, Any]
+
 class CandidateMetrics:
     """Advanced metrics calculator for individual candidates."""
     
@@ -601,3 +629,599 @@ class CandidateMetrics:
         except Exception as e:
             logger.error(f"Error getting candidates summary: {e}")
             return []
+
+    def get_ballot_journey_analysis(self, candidate_id: int) -> Optional[BallotJourneyData]:
+        """Get detailed ballot journey analysis showing how ballots that ranked this candidate moved through STV."""
+        try:
+            candidate_info = self.db.query(f"""
+                SELECT candidate_name FROM candidates WHERE candidate_id = {candidate_id}
+            """)
+            
+            if candidate_info.empty:
+                return None
+                
+            candidate_name = candidate_info.iloc[0]['candidate_name']
+            
+            # Get all ballots that ranked this candidate
+            candidate_ballots = self.db.query(f"""
+                SELECT 
+                    BallotID,
+                    rank_position,
+                    candidate_id
+                FROM ballots_long 
+                WHERE candidate_id = {candidate_id}
+            """)
+            
+            if candidate_ballots.empty:
+                return BallotJourneyData(
+                    candidate_id=candidate_id,
+                    candidate_name=candidate_name,
+                    ballot_flows=[],
+                    round_summaries=[],
+                    transfer_patterns=[],
+                    retention_analysis={}
+                )
+            
+            # For detailed ballot journey analysis, we need to run STV with tracking
+            # This would require integration with the STV tabulator
+            # For now, we'll provide static analysis of ranking patterns
+            
+            # Sample a subset of ballots for performance (limit to 100 ballots for demo)
+            sample_ballots = candidate_ballots.head(100)
+            
+            ballot_flows = []
+            for _, ballot in sample_ballots.iterrows():
+                ballot_id = ballot['BallotID']
+                
+                # Get full ranking sequence for this ballot
+                full_ballot = self.db.query(f"""
+                    SELECT 
+                        bl.candidate_id,
+                        bl.rank_position,
+                        c.candidate_name
+                    FROM ballots_long bl
+                    JOIN candidates c ON bl.candidate_id = c.candidate_id
+                    WHERE bl.BallotID = '{ballot_id}'
+                    ORDER BY bl.rank_position
+                """)
+                
+                ranking_sequence = []
+                for _, ranking in full_ballot.iterrows():
+                    ranking_sequence.append({
+                        'candidate_id': ranking['candidate_id'],
+                        'candidate_name': ranking['candidate_name'],
+                        'rank_position': ranking['rank_position']
+                    })
+                
+                ballot_flows.append({
+                    'ballot_id': ballot_id,
+                    'candidate_rank_position': ballot['rank_position'],
+                    'full_ranking_sequence': ranking_sequence,
+                    'transfer_potential': len(ranking_sequence) - ballot['rank_position']
+                })
+            
+            # Analyze transfer patterns from ranking data
+            transfer_patterns = self._analyze_ranking_transfer_patterns(candidate_id, candidate_ballots)
+            
+            # Calculate retention analysis
+            retention_analysis = self._calculate_retention_analysis(candidate_id, candidate_ballots)
+            
+            # Generate round summaries (simplified without actual STV run)
+            round_summaries = self._generate_simplified_round_summaries(candidate_id, transfer_patterns)
+            
+            return BallotJourneyData(
+                candidate_id=candidate_id,
+                candidate_name=candidate_name,
+                ballot_flows=ballot_flows,
+                round_summaries=round_summaries,
+                transfer_patterns=transfer_patterns,
+                retention_analysis=retention_analysis
+            )
+            
+        except Exception as e:
+            logger.error(f"Error analyzing ballot journey for candidate {candidate_id}: {e}")
+            return None
+
+    def _analyze_ranking_transfer_patterns(self, candidate_id: int, candidate_ballots: pd.DataFrame) -> List[Dict[str, Any]]:
+        """Analyze where votes would transfer based on ranking patterns."""
+        try:
+            transfer_patterns = []
+            
+            # Get potential transfer destinations for each ballot
+            transfer_data = self.db.query(f"""
+                WITH candidate_ballots AS (
+                    SELECT 
+                        BallotID,
+                        rank_position as candidate_rank
+                    FROM ballots_long 
+                    WHERE candidate_id = {candidate_id}
+                ),
+                next_choices AS (
+                    SELECT 
+                        cb.BallotID,
+                        cb.candidate_rank,
+                        bl.candidate_id as next_candidate_id,
+                        c.candidate_name as next_candidate_name,
+                        bl.rank_position as next_rank,
+                        bl.rank_position - cb.candidate_rank as transfer_distance
+                    FROM candidate_ballots cb
+                    JOIN ballots_long bl ON cb.BallotID = bl.BallotID 
+                        AND bl.rank_position > cb.candidate_rank
+                        AND bl.candidate_id != {candidate_id}
+                    JOIN candidates c ON bl.candidate_id = c.candidate_id
+                )
+                SELECT 
+                    next_candidate_id,
+                    next_candidate_name,
+                    COUNT(*) as transfer_votes,
+                    AVG(transfer_distance) as avg_transfer_distance,
+                    MIN(transfer_distance) as min_transfer_distance,
+                    STRING_AGG(DISTINCT BallotID, ',') as sample_ballots
+                FROM next_choices
+                WHERE transfer_distance = 1  -- Immediate next choice
+                GROUP BY next_candidate_id, next_candidate_name
+                ORDER BY transfer_votes DESC
+            """)
+            
+            for _, row in transfer_data.iterrows():
+                transfer_patterns.append({
+                    'destination_candidate_id': row['next_candidate_id'],
+                    'destination_candidate_name': row['next_candidate_name'],
+                    'transfer_votes': row['transfer_votes'],
+                    'avg_transfer_distance': round(row['avg_transfer_distance'], 2),
+                    'min_transfer_distance': row['min_transfer_distance'],
+                    'sample_ballots': row['sample_ballots'].split(',')[:5] if row['sample_ballots'] else []
+                })
+            
+            return transfer_patterns
+            
+        except Exception as e:
+            logger.error(f"Error analyzing transfer patterns: {e}")
+            return []
+
+    def _calculate_retention_analysis(self, candidate_id: int, candidate_ballots: pd.DataFrame) -> Dict[str, Any]:
+        """Calculate how many votes stay vs transfer."""
+        try:
+            total_ballots = len(candidate_ballots)
+            
+            # Count ballots with next preferences
+            ballots_with_transfers = self.db.query(f"""
+                WITH candidate_ballots AS (
+                    SELECT 
+                        BallotID,
+                        rank_position as candidate_rank
+                    FROM ballots_long 
+                    WHERE candidate_id = {candidate_id}
+                )
+                SELECT COUNT(DISTINCT cb.BallotID) as count
+                FROM candidate_ballots cb
+                JOIN ballots_long bl ON cb.BallotID = bl.BallotID 
+                    AND bl.rank_position > cb.candidate_rank
+                    AND bl.candidate_id != {candidate_id}
+            """).iloc[0]['count']
+            
+            # Count bullet voters (would exhaust)
+            bullet_voters = total_ballots - ballots_with_transfers
+            
+            return {
+                'total_ballots': total_ballots,
+                'ballots_with_transfers': ballots_with_transfers,
+                'bullet_voters': bullet_voters,
+                'transfer_rate': round((ballots_with_transfers / total_ballots) * 100, 2) if total_ballots > 0 else 0,
+                'exhaustion_rate': round((bullet_voters / total_ballots) * 100, 2) if total_ballots > 0 else 0
+            }
+            
+        except Exception as e:
+            logger.error(f"Error calculating retention analysis: {e}")
+            return {}
+
+    def _generate_simplified_round_summaries(self, candidate_id: int, transfer_patterns: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Generate simplified round summaries without full STV run."""
+        try:
+            # This is a simplified version - in reality we'd need actual STV round data
+            summaries = []
+            
+            if transfer_patterns:
+                summaries.append({
+                    'round_type': 'elimination_simulation',
+                    'description': 'Potential vote transfer if candidate eliminated',
+                    'top_destinations': transfer_patterns[:5],
+                    'total_transferable': sum(p['transfer_votes'] for p in transfer_patterns)
+                })
+            
+            return summaries
+            
+        except Exception as e:
+            logger.error(f"Error generating round summaries: {e}")
+            return []
+
+    def get_supporter_segmentation_analysis(self, candidate_id: int) -> Optional[SupporterSegmentation]:
+        """Analyze different types of supporters and their characteristics."""
+        try:
+            candidate_info = self.db.query(f"""
+                SELECT candidate_name FROM candidates WHERE candidate_id = {candidate_id}
+            """)
+            
+            if candidate_info.empty:
+                return None
+                
+            candidate_name = candidate_info.iloc[0]['candidate_name']
+            
+            # Analyze different supporter archetypes
+            archetypes = []
+            
+            # 1. Bullet Voters - only ranked this candidate
+            bullet_voters = self.db.query(f"""
+                WITH candidate_supporters AS (
+                    SELECT DISTINCT BallotID
+                    FROM ballots_long 
+                    WHERE candidate_id = {candidate_id}
+                ),
+                ballot_completeness AS (
+                    SELECT 
+                        cs.BallotID,
+                        COUNT(bl.candidate_id) as total_candidates_ranked
+                    FROM candidate_supporters cs
+                    JOIN ballots_long bl ON cs.BallotID = bl.BallotID
+                    GROUP BY cs.BallotID
+                )
+                SELECT 
+                    COUNT(*) as bullet_count,
+                    STRING_AGG(BallotID, ',') as sample_ballots
+                FROM ballot_completeness
+                WHERE total_candidates_ranked = 1
+            """)
+            
+            bullet_count = bullet_voters.iloc[0]['bullet_count']
+            bullet_samples = (bullet_voters.iloc[0]['sample_ballots'].split(',')[:3] 
+                             if bullet_voters.iloc[0]['sample_ballots'] else [])
+            
+            # 2. Strategic Rankers - ranked many candidates with this one highly
+            strategic_rankers = self.db.query(f"""
+                WITH candidate_supporters AS (
+                    SELECT 
+                        BallotID,
+                        rank_position as candidate_rank
+                    FROM ballots_long 
+                    WHERE candidate_id = {candidate_id}
+                ),
+                ballot_completeness AS (
+                    SELECT 
+                        cs.BallotID,
+                        cs.candidate_rank,
+                        COUNT(bl.candidate_id) as total_candidates_ranked
+                    FROM candidate_supporters cs
+                    JOIN ballots_long bl ON cs.BallotID = bl.BallotID
+                    GROUP BY cs.BallotID, cs.candidate_rank
+                )
+                SELECT 
+                    COUNT(*) as strategic_count,
+                    STRING_AGG(BallotID, ',') as sample_ballots
+                FROM ballot_completeness
+                WHERE total_candidates_ranked >= 4 AND candidate_rank <= 2
+            """)
+            
+            strategic_count = strategic_rankers.iloc[0]['strategic_count']
+            strategic_samples = (strategic_rankers.iloc[0]['sample_ballots'].split(',')[:3] 
+                                 if strategic_rankers.iloc[0]['sample_ballots'] else [])
+            
+            # 3. Coalition Builders - ranked this candidate with many others
+            coalition_builders = self.db.query(f"""
+                WITH candidate_supporters AS (
+                    SELECT 
+                        BallotID,
+                        rank_position as candidate_rank
+                    FROM ballots_long 
+                    WHERE candidate_id = {candidate_id}
+                ),
+                ballot_completeness AS (
+                    SELECT 
+                        cs.BallotID,
+                        cs.candidate_rank,
+                        COUNT(bl.candidate_id) as total_candidates_ranked
+                    FROM candidate_supporters cs
+                    JOIN ballots_long bl ON cs.BallotID = bl.BallotID
+                    GROUP BY cs.BallotID, cs.candidate_rank
+                )
+                SELECT 
+                    COUNT(*) as coalition_count,
+                    STRING_AGG(BallotID, ',') as sample_ballots
+                FROM ballot_completeness
+                WHERE total_candidates_ranked >= 5 AND candidate_rank >= 3
+            """)
+            
+            coalition_count = coalition_builders.iloc[0]['coalition_count']
+            coalition_samples = (coalition_builders.iloc[0]['sample_ballots'].split(',')[:3] 
+                                 if coalition_builders.iloc[0]['sample_ballots'] else [])
+            
+            # Get total supporters for percentage calculations
+            total_supporters = self.db.query(f"""
+                SELECT COUNT(DISTINCT BallotID) as count
+                FROM ballots_long 
+                WHERE candidate_id = {candidate_id}
+            """).iloc[0]['count']
+            
+            # Create archetype objects
+            if bullet_count > 0:
+                archetypes.append(SupporterArchetype(
+                    archetype_name="Bullet Voters",
+                    ballot_count=bullet_count,
+                    percentage=round((bullet_count / total_supporters) * 100, 2) if total_supporters > 0 else 0,
+                    characteristics={
+                        'description': 'Voted only for this candidate',
+                        'loyalty': 'Extremely High',
+                        'engagement': 'Focused',
+                        'transfer_potential': 'None (votes exhaust)'
+                    },
+                    sample_ballots=bullet_samples
+                ))
+            
+            if strategic_count > 0:
+                archetypes.append(SupporterArchetype(
+                    archetype_name="Strategic Rankers",
+                    ballot_count=strategic_count,
+                    percentage=round((strategic_count / total_supporters) * 100, 2) if total_supporters > 0 else 0,
+                    characteristics={
+                        'description': 'Ranked this candidate highly among many choices',
+                        'loyalty': 'High',
+                        'engagement': 'Strategic',
+                        'transfer_potential': 'High (good backup plans)'
+                    },
+                    sample_ballots=strategic_samples
+                ))
+            
+            if coalition_count > 0:
+                archetypes.append(SupporterArchetype(
+                    archetype_name="Coalition Builders",
+                    ballot_count=coalition_count,
+                    percentage=round((coalition_count / total_supporters) * 100, 2) if total_supporters > 0 else 0,
+                    characteristics={
+                        'description': 'Ranked many candidates including this one',
+                        'loyalty': 'Moderate',
+                        'engagement': 'Broad',
+                        'transfer_potential': 'Very High (many alternatives)'
+                    },
+                    sample_ballots=coalition_samples
+                ))
+            
+            # Generate clustering analysis
+            clustering_analysis = {
+                'total_supporters': total_supporters,
+                'archetypes_identified': len(archetypes),
+                'largest_segment': max(archetypes, key=lambda x: x.ballot_count).archetype_name if archetypes else None,
+                'diversity_score': len(archetypes) / 3.0  # Score out of 1.0 for max diversity
+            }
+            
+            # Analyze preference patterns
+            preference_patterns = self._analyze_preference_patterns(candidate_id)
+            
+            return SupporterSegmentation(
+                candidate_id=candidate_id,
+                candidate_name=candidate_name,
+                archetypes=archetypes,
+                clustering_analysis=clustering_analysis,
+                preference_patterns=preference_patterns
+            )
+            
+        except Exception as e:
+            logger.error(f"Error analyzing supporter segmentation for candidate {candidate_id}: {e}")
+            return None
+
+    def _analyze_preference_patterns(self, candidate_id: int) -> Dict[str, Any]:
+        """Analyze common preference patterns among supporters."""
+        try:
+            # Find most common co-ranked candidates
+            common_coranked = self.db.query(f"""
+                WITH candidate_ballots AS (
+                    SELECT DISTINCT BallotID
+                    FROM ballots_long 
+                    WHERE candidate_id = {candidate_id}
+                )
+                SELECT 
+                    bl.candidate_id,
+                    c.candidate_name,
+                    COUNT(*) as co_appearances,
+                    ROUND(100.0 * COUNT(*) / (SELECT COUNT(*) FROM candidate_ballots), 2) as percentage
+                FROM candidate_ballots cb
+                JOIN ballots_long bl ON cb.BallotID = bl.BallotID AND bl.candidate_id != {candidate_id}
+                JOIN candidates c ON bl.candidate_id = c.candidate_id
+                GROUP BY bl.candidate_id, c.candidate_name
+                ORDER BY co_appearances DESC
+                LIMIT 10
+            """)
+            
+            # Analyze ranking position patterns
+            position_patterns = self.db.query(f"""
+                SELECT 
+                    rank_position,
+                    COUNT(*) as votes,
+                    ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 2) as percentage
+                FROM ballots_long 
+                WHERE candidate_id = {candidate_id}
+                GROUP BY rank_position
+                ORDER BY rank_position
+            """)
+            
+            return {
+                'most_common_coranked': common_coranked.to_dict('records'),
+                'ranking_position_distribution': position_patterns.to_dict('records'),
+                'primary_ranking_position': position_patterns.loc[position_patterns['votes'].idxmax()]['rank_position'] if not position_patterns.empty else None
+            }
+            
+        except Exception as e:
+            logger.error(f"Error analyzing preference patterns: {e}")
+            return {}
+
+    def get_coalition_centrality_analysis(self, candidate_id: int) -> Dict[str, Any]:
+        """
+        Analyze how central this candidate is to coalition networks.
+        Uses network analysis concepts to determine influence and positioning.
+        """
+        try:
+            candidate_info = self.db.query(f"""
+                SELECT candidate_name FROM candidates WHERE candidate_id = {candidate_id}
+            """)
+            
+            if candidate_info.empty:
+                return {"error": "Candidate not found"}
+                
+            candidate_name = candidate_info.iloc[0]['candidate_name']
+            
+            # Get all coalition relationships for this candidate
+            coalition_relationships = self.db.query(f"""
+                WITH candidate_ballots AS (
+                    SELECT DISTINCT BallotID
+                    FROM ballots_long 
+                    WHERE candidate_id = {candidate_id}
+                ),
+                shared_ballots AS (
+                    SELECT 
+                        bl.candidate_id as other_candidate_id,
+                        c.candidate_name as other_candidate_name,
+                        COUNT(*) as shared_ballots,
+                        AVG(ABS(bl.rank_position - main.rank_position)) as avg_rank_distance
+                    FROM candidate_ballots cb
+                    JOIN ballots_long main ON cb.BallotID = main.BallotID AND main.candidate_id = {candidate_id}
+                    JOIN ballots_long bl ON cb.BallotID = bl.BallotID AND bl.candidate_id != {candidate_id}
+                    JOIN candidates c ON bl.candidate_id = c.candidate_id
+                    GROUP BY bl.candidate_id, c.candidate_name
+                    HAVING COUNT(*) >= 50  -- Minimum threshold for meaningful relationship
+                )
+                SELECT 
+                    other_candidate_id,
+                    other_candidate_name,
+                    shared_ballots,
+                    avg_rank_distance,
+                    -- Simple coalition strength based on shared ballots and proximity
+                    shared_ballots / (avg_rank_distance + 1) as coalition_strength
+                FROM shared_ballots
+                ORDER BY coalition_strength DESC
+            """)
+            
+            if coalition_relationships.empty:
+                return {
+                    "candidate_id": candidate_id,
+                    "candidate_name": candidate_name,
+                    "centrality_score": 0,
+                    "network_position": "isolated",
+                    "influence_metrics": {},
+                    "coalition_connections": []
+                }
+            
+            # Calculate centrality metrics
+            total_connections = len(coalition_relationships)
+            strong_connections = len(coalition_relationships[coalition_relationships['coalition_strength'] > 50])
+            total_shared_ballots = coalition_relationships['shared_ballots'].sum()
+            avg_coalition_strength = coalition_relationships['coalition_strength'].mean()
+            
+            # Calculate influence metrics
+            # Degree centrality - how many significant connections
+            all_candidates_count = self.db.query("SELECT COUNT(*) as count FROM candidates").iloc[0]['count']
+            degree_centrality = total_connections / (all_candidates_count - 1)  # Normalized by max possible connections
+            
+            # Strength centrality - weighted by coalition strength
+            max_possible_strength = coalition_relationships['coalition_strength'].max() * total_connections
+            strength_centrality = coalition_relationships['coalition_strength'].sum() / max_possible_strength if max_possible_strength > 0 else 0
+            
+            # Bridge score - how well this candidate connects different groups
+            # Simple heuristic: candidates with diverse coalition partners score higher
+            bridge_score = min(1.0, total_connections / 10.0)  # Max score when connected to 10+ candidates
+            
+            # Overall centrality score (0-1 scale)
+            centrality_score = (degree_centrality * 0.4 + strength_centrality * 0.4 + bridge_score * 0.2)
+            
+            # Determine network position
+            if centrality_score > 0.7:
+                network_position = "central_hub"
+            elif centrality_score > 0.5:
+                network_position = "well_connected"
+            elif centrality_score > 0.3:
+                network_position = "moderately_connected"
+            elif centrality_score > 0.1:
+                network_position = "periphery"
+            else:
+                network_position = "isolated"
+            
+            # Get top coalition connections
+            top_connections = []
+            for _, row in coalition_relationships.head(10).iterrows():
+                top_connections.append({
+                    "candidate_id": row['other_candidate_id'],
+                    "candidate_name": row['other_candidate_name'],
+                    "shared_ballots": int(row['shared_ballots']),
+                    "avg_rank_distance": round(row['avg_rank_distance'], 2),
+                    "coalition_strength": round(row['coalition_strength'], 2)
+                })
+            
+            return {
+                "candidate_id": candidate_id,
+                "candidate_name": candidate_name,
+                "centrality_score": round(centrality_score, 4),
+                "network_position": network_position,
+                "influence_metrics": {
+                    "degree_centrality": round(degree_centrality, 4),
+                    "strength_centrality": round(strength_centrality, 4),
+                    "bridge_score": round(bridge_score, 4),
+                    "total_connections": total_connections,
+                    "strong_connections": strong_connections,
+                    "total_shared_ballots": int(total_shared_ballots),
+                    "avg_coalition_strength": round(avg_coalition_strength, 2)
+                },
+                "coalition_connections": top_connections,
+                "network_insights": self._generate_network_insights(network_position, centrality_score, total_connections)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error analyzing coalition centrality for candidate {candidate_id}: {e}")
+            return {"error": f"Analysis failed: {str(e)}"}
+
+    def _generate_network_insights(self, network_position: str, centrality_score: float, total_connections: int) -> List[str]:
+        """Generate human-readable insights about network position."""
+        insights = []
+        
+        position_insights = {
+            "central_hub": [
+                "This candidate is a central figure in coalition networks",
+                "Has strong connections across the political spectrum",
+                "Could be a kingmaker or consensus-building candidate",
+                "Elimination would significantly reshape coalition dynamics"
+            ],
+            "well_connected": [
+                "This candidate has good coalition-building potential",
+                "Maintains meaningful relationships with many other candidates",
+                "Could serve as a bridge between different political groups",
+                "Has significant influence on vote transfers"
+            ],
+            "moderately_connected": [
+                "This candidate has some coalition relationships",
+                "Limited but meaningful connections to other candidates",
+                "May appeal to specific voter segments",
+                "Moderate influence on overall election dynamics"
+            ],
+            "periphery": [
+                "This candidate has few strong coalition relationships",
+                "May appeal to a distinct voter base",
+                "Limited influence on vote transfers",
+                "Could be an independent or outsider candidate"
+            ],
+            "isolated": [
+                "This candidate has minimal coalition connections",
+                "Very distinct voter base with little overlap",
+                "Minimal influence on other candidates' vote totals",
+                "Could be a highly polarizing or niche candidate"
+            ]
+        }
+        
+        insights.extend(position_insights.get(network_position, []))
+        
+        # Add quantitative insights
+        if total_connections > 15:
+            insights.append(f"Connected to {total_connections} candidates - exceptionally broad appeal")
+        elif total_connections > 10:
+            insights.append(f"Connected to {total_connections} candidates - broad coalition potential")
+        elif total_connections > 5:
+            insights.append(f"Connected to {total_connections} candidates - moderate coalition scope")
+        else:
+            insights.append(f"Connected to only {total_connections} candidates - limited coalition scope")
+        
+        return insights

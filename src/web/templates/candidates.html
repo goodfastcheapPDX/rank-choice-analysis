@@ -488,6 +488,9 @@
         <button class="tab active" onclick="switchTab('overview')">Overview</button>
         <button class="tab" onclick="switchTab('supporters')">Supporters</button>
         <button class="tab" onclick="switchTab('transfers')">Transfers</button>
+        <button class="tab" onclick="switchTab('ballotJourney')">Ballot Journey</button>
+        <button class="tab" onclick="switchTab('progression')">STV Rounds</button>
+        <button class="tab" onclick="switchTab('similarity')">Similar Candidates</button>
         <button class="tab" onclick="switchTab('coalitions')">Coalitions</button>
         <button class="tab" onclick="switchTab('comparison')">Compare</button>
     </div>
@@ -527,10 +530,61 @@
         </div>
     </div>
     
+    <div id="ballotJourneyTab" class="tab-content">
+        <div class="chart-container">
+            <h3>Ballot Flow Analysis</h3>
+            <div id="ballotFlowChart"></div>
+        </div>
+        
+        <div class="chart-container">
+            <h3>Transfer Destinations</h3>
+            <div id="transferDestinationsAnalysis"></div>
+        </div>
+        
+        <div class="chart-container">
+            <h3>Vote Retention Analysis</h3>
+            <div id="retentionAnalysis"></div>
+        </div>
+    </div>
+    
+    <div id="progressionTab" class="tab-content">
+        <div class="chart-container">
+            <h3>Round-by-Round Vote Progression</h3>
+            <div id="roundProgressionChart"></div>
+        </div>
+        
+        <div class="chart-container">
+            <h3>Transfer Flow Details</h3>
+            <div id="transferFlowDetails"></div>
+        </div>
+    </div>
+    
+    <div id="similarityTab" class="tab-content">
+        <div class="chart-container">
+            <h3>Most Similar Candidates</h3>
+            <div id="similarCandidatesChart"></div>
+        </div>
+        
+        <div class="chart-container">
+            <h3>Supporter Archetype Comparison</h3>
+            <div id="archetypeComparisonChart"></div>
+        </div>
+    </div>
+
     <div id="coalitionsTab" class="tab-content">
+        <div class="chart-container">
+            <h3>Network Centrality Analysis</h3>
+            <div id="centralityAnalysis"></div>
+        </div>
+        
         <div class="chart-container">
             <h3>Coalition Partners</h3>
             <div id="coalitionChart"></div>
+        </div>
+        
+        <div class="chart-container">
+            <h3>Network Insights</h3>
+            <div id="networkInsights"></div>
         </div>
     </div>
     
@@ -958,7 +1012,10 @@ async function showCandidateDetail(candidateId) {
         renderOverviewTab(profile);
         await loadSupportersTab(candidateId);
         await loadTransfersTab(candidateId);
-        loadCoalitionsTab(profile);
+        await loadBallotJourneyTab(candidateId);
+        await loadProgressionTab(candidateId);
+        await loadSimilarityTab(candidateId);
+        await loadCoalitionsTab(candidateId);
         
         document.getElementById('candidateDetail').style.display = 'block';
         document.getElementById('candidateDetail').scrollIntoView({ behavior: 'smooth' });
@@ -1042,6 +1099,7 @@ function renderOverviewTab(profile) {
 async function loadSupportersTab(candidateId) {
     try {
         const supporters = await fetchData(`/api/candidates/${candidateId}/supporters`);
+        const segmentation = await fetchData(`/api/candidates/${candidateId}/supporter-segments`);
         
         // Ranking distribution chart
         const rankingData = Object.entries(supporters.ranking_distribution || {});
@@ -1058,7 +1116,22 @@ async function loadSupportersTab(candidateId) {
             yaxis: { title: 'Number of Votes' }
         });
         
-        // Supporter behavior summary
+        // Enhanced supporter behavior with archetypes
+        let archetypeCards = '';
+        if (segmentation.archetypes && segmentation.archetypes.length > 0) {
+            archetypeCards = segmentation.archetypes.map(archetype => `
+                <div class="metric-card">
+                    <span class="metric-number">${archetype.ballot_count}</span>
+                    <div class="metric-label">${archetype.archetype_name}</div>
+                    <div class="metric-description">${archetype.percentage}% - ${archetype.characteristics.description}</div>
+                    <div style="font-size: 0.8rem; color: #7f8c8d; margin-top: 0.5rem;">
+                        Loyalty: ${archetype.characteristics.loyalty}<br>
+                        Transfer: ${archetype.characteristics.transfer_potential}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
         document.getElementById('supporterChart').innerHTML = `
             <div class="metrics-grid">
                 <div class="metric-card">
@@ -1079,7 +1152,23 @@ async function loadSupportersTab(candidateId) {
                     </div>
                     <div class="metric-description">How polarizing this candidate is</div>
                 </div>
+                ${archetypeCards}
             </div>
+            
+            ${segmentation.preference_patterns && segmentation.preference_patterns.most_common_coranked ? `
+                <div style="margin-top: 2rem;">
+                    <h4>Most Commonly Co-Ranked Candidates</h4>
+                    <div class="metrics-grid">
+                        ${segmentation.preference_patterns.most_common_coranked.slice(0, 6).map(corank => `
+                            <div class="metric-card">
+                                <span class="metric-number">${corank.percentage}%</span>
+                                <div class="metric-label">${corank.candidate_name}</div>
+                                <div class="metric-description">${corank.co_appearances} ballots</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
         `;
         
     } catch (error) {
@@ -1146,23 +1235,95 @@ async function loadTransfersTab(candidateId) {
     }
 }
 
-function loadCoalitionsTab(profile) {
-    if (profile.top_coalition_partners && profile.top_coalition_partners.length > 0) {
-        const coalitionData = [{
-            x: profile.top_coalition_partners.map(p => p.other_candidate_name),
-            y: profile.top_coalition_partners.map(p => p.coalition_score),
-            type: 'bar',
-            marker: { color: '#9b59b6' }
-        }];
+async function loadCoalitionsTab(candidateId) {
+    try {
+        // Load centrality analysis
+        const centralityData = await fetchData(`/api/candidates/${candidateId}/coalition-centrality`);
         
-        Plotly.newPlot('coalitionChart', coalitionData, {
-            title: 'Strongest Coalition Partners',
-            xaxis: { title: 'Coalition Partner' },
-            yaxis: { title: 'Coalition Strength Score' }
-        });
-    } else {
-        document.getElementById('coalitionChart').innerHTML = 
-            '<div class="loading">No coalition data available</div>';
+        // Display centrality metrics
+        if (centralityData && !centralityData.error) {
+            const metrics = centralityData.influence_metrics;
+            document.getElementById('centralityAnalysis').innerHTML = `
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <span class="metric-number">${(centralityData.centrality_score * 100).toFixed(1)}%</span>
+                        <div class="metric-label">Overall Centrality Score</div>
+                        <div class="metric-description">Network influence and connectivity</div>
+                    </div>
+                    <div class="metric-card">
+                        <span class="metric-number">${centralityData.network_position.replace('_', ' ')}</span>
+                        <div class="metric-label">Network Position</div>
+                        <div class="metric-description">Role in coalition networks</div>
+                    </div>
+                    <div class="metric-card">
+                        <span class="metric-number">${metrics.total_connections}</span>
+                        <div class="metric-label">Coalition Connections</div>
+                        <div class="metric-description">${metrics.strong_connections} strong connections</div>
+                    </div>
+                    <div class="metric-card">
+                        <span class="metric-number">${(metrics.degree_centrality * 100).toFixed(1)}%</span>
+                        <div class="metric-label">Degree Centrality</div>
+                        <div class="metric-description">Connection breadth</div>
+                    </div>
+                    <div class="metric-card">
+                        <span class="metric-number">${(metrics.strength_centrality * 100).toFixed(1)}%</span>
+                        <div class="metric-label">Strength Centrality</div>
+                        <div class="metric-description">Connection intensity</div>
+                    </div>
+                    <div class="metric-card">
+                        <span class="metric-number">${(metrics.bridge_score * 100).toFixed(1)}%</span>
+                        <div class="metric-label">Bridge Score</div>
+                        <div class="metric-description">Cross-group connectivity</div>
+                    </div>
+                </div>
+            `;
+            
+            // Display coalition partners chart
+            if (centralityData.coalition_connections && centralityData.coalition_connections.length > 0) {
+                const coalitionData = [{
+                    x: centralityData.coalition_connections.map(c => c.candidate_name),
+                    y: centralityData.coalition_connections.map(c => c.coalition_strength),
+                    type: 'bar',
+                    marker: { color: '#9b59b6' },
+                    text: centralityData.coalition_connections.map(c => `${c.shared_ballots} ballots`),
+                    textposition: 'auto'
+                }];
+                
+                Plotly.newPlot('coalitionChart', coalitionData, {
+                    title: 'Coalition Partners by Strength',
+                    xaxis: { title: 'Coalition Partner' },
+                    yaxis: { title: 'Coalition Strength Score' }
+                });
+            } else {
+                document.getElementById('coalitionChart').innerHTML = 
+                    '<div class="loading">No coalition partners found</div>';
+            }
+            
+            // Display network insights
+            if (centralityData.network_insights && centralityData.network_insights.length > 0) {
+                document.getElementById('networkInsights').innerHTML = `
+                    <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 6px;">
+                        <h4 style="margin-top: 0; color: #2c3e50;">Network Analysis Insights</h4>
+                        <ul style="margin: 0; padding-left: 1.5rem;">
+                            ${centralityData.network_insights.map(insight => 
+                                `<li style="margin-bottom: 0.5rem; color: #5d6d7e;">${insight}</li>`
+                            ).join('')}
+                        </ul>
+                    </div>
+                `;
+            } else {
+                document.getElementById('networkInsights').innerHTML = 
+                    '<div class="loading">No network insights available</div>';
+            }
+            
+        } else {
+            document.getElementById('centralityAnalysis').innerHTML = 
+                '<div class="error">Failed to load centrality data</div>';
+        }
+        
+    } catch (error) {
+        document.getElementById('centralityAnalysis').innerHTML = 
+            '<div class="error">Failed to load coalition data: ' + error.message + '</div>';
     }
 }
 
@@ -1234,6 +1395,219 @@ function switchTab(tabName) {
 function closeDetail() {
     document.getElementById('candidateDetail').style.display = 'none';
     currentCandidate = null;
+}
+
+async function loadBallotJourneyTab(candidateId) {
+    try {
+        const journeyData = await fetchData(`/api/candidates/${candidateId}/ballot-journey`);
+        
+        // Ballot Flow Chart - showing transfer destinations
+        if (journeyData.transfer_patterns && journeyData.transfer_patterns.length > 0) {
+            const flowData = [{
+                x: journeyData.transfer_patterns.map(p => p.destination_candidate_name),
+                y: journeyData.transfer_patterns.map(p => p.transfer_votes),
+                type: 'bar',
+                marker: { color: '#3498db' },
+                text: journeyData.transfer_patterns.map(p => `${p.transfer_votes} votes`),
+                textposition: 'auto'
+            }];
+            
+            Plotly.newPlot('ballotFlowChart', flowData, {
+                title: 'Where This Candidate\'s Supporters\' Votes Would Transfer',
+                xaxis: { title: 'Destination Candidate' },
+                yaxis: { title: 'Number of Votes' }
+            });
+        } else {
+            document.getElementById('ballotFlowChart').innerHTML = 
+                '<div class="loading">No transfer patterns available for this candidate</div>';
+        }
+        
+        // Transfer Destinations Analysis
+        if (journeyData.transfer_patterns && journeyData.transfer_patterns.length > 0) {
+            document.getElementById('transferDestinationsAnalysis').innerHTML = `
+                <div class="metrics-grid">
+                    ${journeyData.transfer_patterns.slice(0, 6).map(pattern => `
+                        <div class="metric-card">
+                            <span class="metric-number">${pattern.transfer_votes}</span>
+                            <div class="metric-label">${pattern.destination_candidate_name}</div>
+                            <div class="metric-description">Avg distance: ${pattern.avg_transfer_distance} ranks</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        } else {
+            document.getElementById('transferDestinationsAnalysis').innerHTML = 
+                '<div class="loading">No transfer analysis available</div>';
+        }
+        
+        // Retention Analysis
+        if (journeyData.retention_analysis) {
+            const retention = journeyData.retention_analysis;
+            document.getElementById('retentionAnalysis').innerHTML = `
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <span class="metric-number">${retention.total_ballots}</span>
+                        <div class="metric-label">Total Ballots</div>
+                        <div class="metric-description">All ballots ranking this candidate</div>
+                    </div>
+                    <div class="metric-card">
+                        <span class="metric-number">${retention.ballots_with_transfers}</span>
+                        <div class="metric-label">Transferable Ballots</div>
+                        <div class="metric-description">${retention.transfer_rate}% can transfer</div>
+                    </div>
+                    <div class="metric-card">
+                        <span class="metric-number">${retention.bullet_voters}</span>
+                        <div class="metric-label">Bullet Voters</div>
+                        <div class="metric-description">${retention.exhaustion_rate}% would exhaust</div>
+                    </div>
+                </div>
+            `;
+        } else {
+            document.getElementById('retentionAnalysis').innerHTML = 
+                '<div class="loading">No retention analysis available</div>';
+        }
+        
+    } catch (error) {
+        document.getElementById('ballotFlowChart').innerHTML = 
+            '<div class="error">Failed to load ballot journey data: ' + error.message + '</div>';
+    }
+}
+
+async function loadProgressionTab(candidateId) {
+    try {
+        const progressionData = await fetchData(`/api/candidates/${candidateId}/round-progression`);
+        
+        // Round-by-Round Vote Progression Chart
+        const roundData = [{
+            x: progressionData.round_progression.map(r => `Round ${r.round_number}`),
+            y: progressionData.round_progression.map(r => r.vote_total),
+            type: 'scatter',
+            mode: 'lines+markers',
+            line: { color: '#e74c3c', width: 3 },
+            marker: { size: 8 },
+            text: progressionData.round_progression.map(r => 
+                `Round ${r.round_number}: ${r.vote_total} votes${r.vote_change !== 0 ? ` (${r.vote_change > 0 ? '+' : ''}${r.vote_change})` : ''}`
+            ),
+            textposition: 'top center'
+        }];
+        
+        // Add quota line
+        if (progressionData.round_progression.length > 0) {
+            const quota = progressionData.round_progression[0].quota;
+            roundData.push({
+                x: progressionData.round_progression.map(r => `Round ${r.round_number}`),
+                y: Array(progressionData.round_progression.length).fill(quota),
+                type: 'scatter',
+                mode: 'lines',
+                line: { color: '#27ae60', width: 2, dash: 'dash' },
+                name: 'Quota',
+                text: `Quota: ${quota}`,
+                hoverinfo: 'text'
+            });
+        }
+        
+        Plotly.newPlot('roundProgressionChart', roundData, {
+            title: `${progressionData.candidate_name} - Vote Progression Through STV Rounds`,
+            xaxis: { title: 'STV Round' },
+            yaxis: { title: 'Vote Total' },
+            showlegend: true
+        });
+        
+        // Transfer Flow Details
+        const transferDetails = progressionData.round_progression
+            .filter(r => r.transfers_in.length > 0 || r.transfers_out.length > 0)
+            .map(round => `
+                <div class="metric-card">
+                    <h4>Round ${round.round_number}</h4>
+                    <div><strong>Vote Total:</strong> ${round.vote_total}</div>
+                    ${round.vote_change !== 0 ? `<div><strong>Change:</strong> ${round.vote_change > 0 ? '+' : ''}${round.vote_change}</div>` : ''}
+                    ${round.transfers_in.length > 0 ? `
+                        <div><strong>Transfers In:</strong></div>
+                        <ul>
+                            ${round.transfers_in.map(t => `<li>${t.votes_transferred} from ${t.from_candidate_name}</li>`).join('')}
+                        </ul>
+                    ` : ''}
+                    ${round.transfers_out.length > 0 ? `
+                        <div><strong>Transfers Out:</strong></div>
+                        <ul>
+                            ${round.transfers_out.map(t => `<li>${t.votes_transferred} to ${t.to_candidate_name}</li>`).join('')}
+                        </ul>
+                    ` : ''}
+                    ${round.is_eliminated_this_round ? '<div class="error"><strong>ELIMINATED</strong></div>' : ''}
+                    ${round.is_winner_this_round ? '<div style="color: #27ae60;"><strong>WINNER</strong></div>' : ''}
+                </div>
+            `).join('');
+        
+        if (transferDetails) {
+            document.getElementById('transferFlowDetails').innerHTML = `
+                <div class="metrics-grid">
+                    ${transferDetails}
+                </div>
+            `;
+        } else {
+            document.getElementById('transferFlowDetails').innerHTML = 
+                '<div class="loading">No transfer activity in any rounds</div>';
+        }
+        
+    } catch (error) {
+        document.getElementById('roundProgressionChart').innerHTML = 
+            '<div class="error">Failed to load progression data: ' + error.message + '</div>';
+    }
+}
+
+async function loadSimilarityTab(candidateId) {
+    try {
+        const similarityData = await fetchData(`/api/candidates/${candidateId}/similarity`);
+        
+        // Most Similar Candidates Chart
+        if (similarityData.similar_candidates && similarityData.similar_candidates.length > 0) {
+            const similarData = [{
+                x: similarityData.similar_candidates.slice(0, 10).map(c => c.candidate_name),
+                y: similarityData.similar_candidates.slice(0, 10).map(c => c.similarity_score),
+                type: 'bar',
+                marker: { color: '#9b59b6' },
+                text: similarityData.similar_candidates.slice(0, 10).map(c => `${c.similarity_score}%`),
+                textposition: 'auto'
+            }];
+            
+            Plotly.newPlot('similarCandidatesChart', similarData, {
+                title: 'Candidates with Most Similar Supporter Profiles',
+                xaxis: { title: 'Candidate' },
+                yaxis: { title: 'Similarity Score (%)' }
+            });
+        } else {
+            document.getElementById('similarCandidatesChart').innerHTML = 
+                '<div class="loading">No similarity data available</div>';
+        }
+        
+        // Get supporter segmentation for archetype comparison
+        const segmentationData = await fetchData(`/api/candidates/${candidateId}/supporter-segments`);
+        
+        if (segmentationData.archetypes && segmentationData.archetypes.length > 0) {
+            const archetypeData = [{
+                values: segmentationData.archetypes.map(a => a.percentage),
+                labels: segmentationData.archetypes.map(a => a.archetype_name),
+                type: 'pie',
+                textinfo: 'label+percent',
+                textposition: 'outside',
+                marker: {
+                    colors: ['#e74c3c', '#3498db', '#27ae60', '#f39c12', '#9b59b6']
+                }
+            }];
+            
+            Plotly.newPlot('archetypeComparisonChart', archetypeData, {
+                title: `${similarityData.candidate_name} - Supporter Archetypes`,
+                showlegend: true
+            });
+        } else {
+            document.getElementById('archetypeComparisonChart').innerHTML = 
+                '<div class="loading">No archetype data available</div>';
+        }
+        
+    } catch (error) {
+        document.getElementById('similarCandidatesChart').innerHTML = 
+            '<div class="error">Failed to load similarity data: ' + error.message + '</div>';
+    }
 }
 
 // Metrics Explainer Functions
