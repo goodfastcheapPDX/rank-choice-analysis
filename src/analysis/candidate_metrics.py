@@ -270,7 +270,7 @@ class CandidateMetrics:
                 SELECT
                     bl.BallotID,
                     COUNT(DISTINCT bl.candidate_id) as unique_candidates_ranked,
-                    STRING_AGG(DISTINCT c.candidate_name, '|' ORDER BY bl.rank_position) as ranking_sequence
+                    STRING_AGG(c.candidate_name, '|' ORDER BY bl.rank_position) as ranking_sequence
                 FROM ballots_long bl
                 JOIN candidates c ON bl.candidate_id = c.candidate_id
                 WHERE bl.BallotID IN ({ballot_list})
