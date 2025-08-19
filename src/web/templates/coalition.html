@@ -852,11 +852,11 @@
 <div class="card">
     <h2>🎯 Directional Analysis: 3 Core Questions Framework</h2>
     <p>Deep dive into how votes actually flow between candidates using directional proximity analysis</p>
-    
+
     <div class="explanation-panel">
         <h4>Understanding Directional Analysis</h4>
         <p>This framework analyzes three fundamental questions about how voters connect two candidates:</p>
-        
+
         <div class="visual-guide">
             <h5>🔄 The 3 Core Questions:</h5>
             <ul>
@@ -864,7 +864,7 @@
                 <li><strong>Close-Together Rate (A & B)</strong>: % of ballots that list both A and B within the top 3 spots (in any order)</li>
                 <li><strong>Follow-Through (A → B reality)</strong>: When A was eliminated (or had surplus), what share actually landed on B?</li>
             </ul>
-            
+
             <p><strong>Why This Matters:</strong> Directional analysis reveals asymmetric relationships. For example, A's supporters might consistently rank B next, but B's supporters might prefer other candidates after B.</p>
         </div>
     </div>
@@ -920,7 +920,7 @@
                 <p class="metric-explanation" id="follow-through-b-to-a-explanation">--</p>
             </div>
         </div>
-        
+
         <div class="directional-insights">
             <h5>📊 Key Insights</h5>
             <div id="directional-insights-content"></div>
@@ -1218,7 +1218,7 @@ async function loadCandidates() {
         // Also populate directional analysis dropdowns
         const directionalCandidate1 = document.getElementById('directionalCandidate1');
         const directionalCandidate2 = document.getElementById('directionalCandidate2');
-        
+
         if (directionalCandidate1 && directionalCandidate2) {
             directionalCandidate1.innerHTML = '<option value="">Select first candidate...</option>';
             directionalCandidate2.innerHTML = '<option value="">Select second candidate...</option>';
@@ -1229,7 +1229,7 @@ async function loadCandidates() {
             const option2 = new Option(candidate.candidate_name, candidate.candidate_id);
             candidate1Select.add(option1);
             candidate2Select.add(option2);
-            
+
             // Add to directional analysis dropdowns
             if (directionalCandidate1 && directionalCandidate2) {
                 const dirOption1 = new Option(candidate.candidate_name, candidate.candidate_id);
@@ -2045,7 +2045,7 @@ function setupDirectionalAnalysis() {
         const candidate2Selected = directionalCandidate2.value !== '';
         const bothSelected = candidate1Selected && candidate2Selected;
         const differentCandidates = directionalCandidate1.value !== directionalCandidate2.value;
-        
+
         runAnalysisButton.disabled = !bothSelected || !differentCandidates;
     }
 
@@ -2067,14 +2067,14 @@ function setupDirectionalAnalysis() {
 
         try {
             const data = await fetchData(`/api/coalition/directional/${candidate1Id}/${candidate2Id}`);
-            
+
             // Update the results display
             displayDirectionalResults(data);
-            
+
             // Show results
             document.getElementById('directional-loading').style.display = 'none';
             document.getElementById('directional-results').style.display = 'block';
-            
+
         } catch (error) {
             console.error('Directional analysis failed:', error);
             document.getElementById('directional-loading').style.display = 'none';
@@ -2112,17 +2112,17 @@ function setupDirectionalAnalysis() {
 
         // Generate insights
         let insightsHtml = '';
-        
+
         if (insights.bidirectional) {
             insightsHtml += '<div class="insight-item">🔄 <strong>Bidirectional Relationship:</strong> Both candidates have similar next-choice rates, suggesting mutual appeal.</div>';
         } else {
             insightsHtml += '<div class="insight-item">➡️ <strong>Asymmetric Relationship:</strong> The candidates have different levels of mutual appeal.</div>';
         }
-        
+
         if (insights.strong_affinity) {
             insightsHtml += '<div class="insight-item">💪 <strong>Strong Affinity:</strong> High percentage of ballots rank both candidates in their top 3.</div>';
         }
-        
+
         if (insights.high_follow_through) {
             insightsHtml += '<div class="insight-item">✅ <strong>High Follow-Through:</strong> Theoretical support translates well into actual vote transfers.</div>';
         } else {

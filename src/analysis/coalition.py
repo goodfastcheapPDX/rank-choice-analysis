@@ -169,7 +169,8 @@ class CoalitionAnalyzer:
             c2.candidate_name as name_2,
             COUNT(DISTINCT b1.BallotID) as shared_ballots
         FROM ballots_long b1
-        JOIN ballots_long b2 ON b1.BallotID = b2.BallotID AND b1.candidate_id < b2.candidate_id
+        JOIN ballots_long b2 ON b1.BallotID = b2.BallotID
+            AND b1.candidate_id < b2.candidate_id
         JOIN candidates c1 ON b1.candidate_id = c1.candidate_id
         JOIN candidates c2 ON b2.candidate_id = c2.candidate_id
         GROUP BY b1.candidate_id, b2.candidate_id, c1.candidate_name, c2.candidate_name
@@ -198,7 +199,8 @@ class CoalitionAnalyzer:
                 union_size = total_1 + total_2 - shared
                 affinity_score = shared / union_size if union_size > 0 else 0.0
 
-                # Overlap percentage: what % of candidate 1's supporters also support candidate 2
+                # Overlap percentage: what % of candidate 1's supporters
+                # also support candidate 2
                 overlap_pct = (shared / total_1) * 100 if total_1 > 0 else 0.0
 
                 affinities.append(
@@ -261,7 +263,8 @@ class CoalitionAnalyzer:
                        ABS(b1.rank_position - b2.rank_position) as ranking_distance,
                        COUNT(*) as occurrence_count
                 FROM ballots_long b1
-                JOIN ballots_long b2 ON b1.BallotID = b2.BallotID AND b1.candidate_id < b2.candidate_id
+                JOIN ballots_long b2 ON b1.BallotID = b2.BallotID
+            AND b1.candidate_id < b2.candidate_id
                 JOIN candidates c1 ON b1.candidate_id = c1.candidate_id
                 JOIN candidates c2 ON b2.candidate_id = c2.candidate_id
                 JOIN ballot_metadata bm ON b1.BallotID = bm.BallotID
@@ -284,7 +287,8 @@ class CoalitionAnalyzer:
                 ABS(b1.rank_position - b2.rank_position) as ranking_distance,
                 COUNT(*) as occurrence_count
             FROM ballots_long b1
-            JOIN ballots_long b2 ON b1.BallotID = b2.BallotID AND b1.candidate_id < b2.candidate_id
+            JOIN ballots_long b2 ON b1.BallotID = b2.BallotID
+            AND b1.candidate_id < b2.candidate_id
             JOIN candidates c1 ON b1.candidate_id = c1.candidate_id
             JOIN candidates c2 ON b2.candidate_id = c2.candidate_id
             GROUP BY b1.candidate_id, b2.candidate_id, c1.candidate_name, c2.candidate_name,
@@ -398,9 +402,15 @@ class CoalitionAnalyzer:
 
             # Debug logging for first few pairs
             if len(detailed_pairs) < 5:
-                logger.info(
-                    f"Debug pair {name1} & {name2}: normalized_affinity={normalized_affinity:.4f}, proximity_weighted={proximity_weighted_affinity:.4f}, coalition_strength={coalition_strength:.4f}, avg_distance={avg_distance:.2f}, method={method}, normalize={normalize}"
+                debug_msg = (
+                    f"Debug pair {name1} & {name2}: "
+                    f"normalized_affinity={normalized_affinity:.4f}, "
+                    f"proximity_weighted={proximity_weighted_affinity:.4f}, "
+                    f"coalition_strength={coalition_strength:.4f}, "
+                    f"avg_distance={avg_distance:.2f}, method={method}, "
+                    f"normalize={normalize}"
                 )
+                logger.info(debug_msg)
 
             # Classify coalition type
             coalition_type = self._classify_coalition_type(
@@ -496,23 +506,23 @@ class CoalitionAnalyzer:
     ) -> Dict[str, float]:
         """
         Calculate directional analysis metrics for the 3 Core Questions Framework.
-        
+
         Returns:
             Dictionary with directional metrics
         """
         logger.debug(f"Calculating directional metrics for {name1} & {name2}")
-        
+
         # 1. Next Choice Rate (A → B): % of A ballots with B immediately after
         next_choice_a_to_b = self._calculate_next_choice_rate(cand1_id, cand2_id)
         next_choice_b_to_a = self._calculate_next_choice_rate(cand2_id, cand1_id)
-        
+
         # 2. Close-Together Rate (A & B): % of ballots with both in top 3
         close_together_rate = self._calculate_close_together_rate(cand1_id, cand2_id)
-        
+
         # 3. Follow-Through (A → B reality): actual transfer rate from STV
         follow_through_a_to_b = self._calculate_follow_through_rate(cand1_id, cand2_id)
         follow_through_b_to_a = self._calculate_follow_through_rate(cand2_id, cand1_id)
-        
+
         return {
             "next_choice_rate_a_to_b": next_choice_a_to_b,
             "next_choice_rate_b_to_a": next_choice_b_to_a,
@@ -521,7 +531,9 @@ class CoalitionAnalyzer:
             "follow_through_b_to_a": follow_through_b_to_a,
         }
 
-    def _calculate_next_choice_rate(self, from_candidate: int, to_candidate: int) -> float:
+    def _calculate_next_choice_rate(
+        self, from_candidate: int, to_candidate: int
+    ) -> float:
         """Calculate % of from_candidate ballots with to_candidate immediately after."""
         query = f"""
         WITH candidate_rankings AS (
@@ -532,17 +544,17 @@ class CoalitionAnalyzer:
         immediate_next AS (
             SELECT cr.BallotID
             FROM candidate_rankings cr
-            JOIN ballots_long bl ON cr.BallotID = bl.BallotID 
+            JOIN ballots_long bl ON cr.BallotID = bl.BallotID
                 AND bl.rank_position = cr.rank_position + 1
                 AND bl.candidate_id = {to_candidate}
         )
-        SELECT 
+        SELECT
             COUNT(DISTINCT cr.BallotID) as total_from_ballots,
             COUNT(DISTINCT inx.BallotID) as immediate_next_ballots
         FROM candidate_rankings cr
         LEFT JOIN immediate_next inx ON cr.BallotID = inx.BallotID
         """
-        
+
         result = self.db.query(query)
         if not result.empty and result.iloc[0]["total_from_ballots"] > 0:
             total = result.iloc[0]["total_from_ballots"]
@@ -568,13 +580,13 @@ class CoalitionAnalyzer:
             GROUP BY BallotID
             HAVING COUNT(DISTINCT candidate_id) = 2
         )
-        SELECT 
+        SELECT
             COUNT(DISTINCT bit.BallotID) as both_top3,
             COUNT(DISTINCT tbb.BallotID) as total_both
         FROM total_ballots_both tbb
         LEFT JOIN both_in_top3 bit ON tbb.BallotID = bit.BallotID
         """
-        
+
         result = self.db.query(query)
         if not result.empty and result.iloc[0]["total_both"] > 0:
             top3 = result.iloc[0]["both_top3"]
@@ -582,7 +594,9 @@ class CoalitionAnalyzer:
             return (top3 / total) * 100.0
         return 0.0
 
-    def _calculate_follow_through_rate(self, from_candidate: int, to_candidate: int) -> float:
+    def _calculate_follow_through_rate(
+        self, from_candidate: int, to_candidate: int
+    ) -> float:
         """Calculate actual transfer rate based on STV elimination patterns."""
         # This is a simplified calculation - in a full implementation, we'd need
         # access to actual STV round data to calculate real transfer rates
@@ -611,11 +625,11 @@ class CoalitionAnalyzer:
             SELECT COUNT(DISTINCT BallotID) as total_from_ballots
             FROM from_ballots
         )
-        SELECT 
+        SELECT
             COALESCE((SELECT transfers_to_candidate FROM first_transfer), 0) as transfers,
             COALESCE((SELECT total_from_ballots FROM total_transfers), 0) as total
         """
-        
+
         result = self.db.query(query)
         if not result.empty and result.iloc[0]["total"] > 0:
             transfers = result.iloc[0]["transfers"]

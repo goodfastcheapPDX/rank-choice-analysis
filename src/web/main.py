@@ -259,7 +259,7 @@ async def get_stv_results(seats: int = 3):
     try:
         # Run STV tabulation
         tabulator = STVTabulator(database, seats=seats)
-        rounds = tabulator.run_stv_tabulation()
+        _ = tabulator.run_stv_tabulation()
 
         # Get results
         final_results = tabulator.get_final_results()
@@ -269,7 +269,9 @@ async def get_stv_results(seats: int = 3):
             "final_results": final_results.to_dict("records"),
             "round_summary": round_summary.to_dict("records"),
             "winners": tabulator.winners,
-            "total_rounds": len(rounds),
+            "total_rounds": (
+                len(tabulator.rounds) if hasattr(tabulator, "rounds") else 0
+            ),
         }
     except Exception as e:
         logger.error(f"Error running STV: {e}")
@@ -286,7 +288,7 @@ async def get_stv_flow_data(seats: int = 3):
     try:
         # Run STV tabulation with detailed tracking enabled
         tabulator = STVTabulator(database, seats=seats, detailed_tracking=True)
-        rounds = tabulator.run_stv_tabulation()
+        _ = tabulator.run_stv_tabulation()
 
         # Get vote flow data
         vote_flow = tabulator.get_vote_flow()
@@ -346,7 +348,7 @@ async def get_round_transfers(round_number: int, seats: int = 3):
     try:
         # Run STV tabulation with detailed tracking
         tabulator = STVTabulator(database, seats=seats, detailed_tracking=True)
-        rounds = tabulator.run_stv_tabulation()
+        _ = tabulator.run_stv_tabulation()
 
         vote_flow = tabulator.get_vote_flow()
         if not vote_flow:
@@ -502,7 +504,7 @@ async def verify_results(
     try:
         # Run our STV tabulation
         tabulator = STVTabulator(database, seats=3)
-        rounds = tabulator.run_stv_tabulation()
+        _ = tabulator.run_stv_tabulation()
 
         # Get our results
         candidates = database.query(
@@ -829,8 +831,12 @@ async def get_all_candidate_pairs_analysis(
                         "weak_coalition_votes": pair.weak_coalition_votes,
                         "transfer_votes_1_to_2": pair.transfer_votes_1_to_2,
                         "transfer_votes_2_to_1": pair.transfer_votes_2_to_1,
-                        "next_choice_rate_a_to_b": round(pair.next_choice_rate_a_to_b, 2),
-                        "next_choice_rate_b_to_a": round(pair.next_choice_rate_b_to_a, 2),
+                        "next_choice_rate_a_to_b": round(
+                            pair.next_choice_rate_a_to_b, 2
+                        ),
+                        "next_choice_rate_b_to_a": round(
+                            pair.next_choice_rate_b_to_a, 2
+                        ),
                         "close_together_rate": round(pair.close_together_rate, 2),
                         "follow_through_a_to_b": round(pair.follow_through_a_to_b, 2),
                         "follow_through_b_to_a": round(pair.follow_through_b_to_a, 2),
@@ -1032,13 +1038,13 @@ async def get_directional_analysis(candidate_1_id: int, candidate_2_id: int):
 
     try:
         analyzer = CoalitionAnalyzer(database)
-        
+
         # Get detailed pair analysis with directional metrics
         pair = analyzer.get_detailed_pair_analysis(candidate_1_id, candidate_2_id)
         if not pair:
             raise HTTPException(
-                status_code=404, 
-                detail="Candidate pair not found or insufficient shared ballots"
+                status_code=404,
+                detail="Candidate pair not found or insufficient shared ballots",
             )
 
         # Return just the directional metrics with explanations
@@ -1051,36 +1057,41 @@ async def get_directional_analysis(candidate_1_id: int, candidate_2_id: int):
                 "next_choice_rate_a_to_b": {
                     "value": round(pair.next_choice_rate_a_to_b, 2),
                     "explanation": f"Of ballots that ranked {pair.candidate_1_name} anywhere, {pair.next_choice_rate_a_to_b:.1f}% had {pair.candidate_2_name} immediately after",
-                    "question": "Next Choice Rate (A → B)"
+                    "question": "Next Choice Rate (A → B)",
                 },
                 "next_choice_rate_b_to_a": {
                     "value": round(pair.next_choice_rate_b_to_a, 2),
                     "explanation": f"Of ballots that ranked {pair.candidate_2_name} anywhere, {pair.next_choice_rate_b_to_a:.1f}% had {pair.candidate_1_name} immediately after",
-                    "question": "Next Choice Rate (B → A)"
+                    "question": "Next Choice Rate (B → A)",
                 },
                 "close_together_rate": {
                     "value": round(pair.close_together_rate, 2),
                     "explanation": f"{pair.close_together_rate:.1f}% of ballots that ranked both candidates had them both in the top 3 spots",
-                    "question": "Close-Together Rate (A & B)"
+                    "question": "Close-Together Rate (A & B)",
                 },
                 "follow_through_a_to_b": {
                     "value": round(pair.follow_through_a_to_b, 2),
                     "explanation": f"When {pair.candidate_1_name} supporters' votes would transfer, {pair.follow_through_a_to_b:.1f}% actually went to {pair.candidate_2_name}",
-                    "question": "Follow-Through (A → B reality)"
+                    "question": "Follow-Through (A → B reality)",
                 },
                 "follow_through_b_to_a": {
                     "value": round(pair.follow_through_b_to_a, 2),
                     "explanation": f"When {pair.candidate_2_name} supporters' votes would transfer, {pair.follow_through_b_to_a:.1f}% actually went to {pair.candidate_1_name}",
-                    "question": "Follow-Through (B → A reality)"
-                }
+                    "question": "Follow-Through (B → A reality)",
+                },
             },
             "summary_insights": {
-                "bidirectional": bool(abs(pair.next_choice_rate_a_to_b - pair.next_choice_rate_b_to_a) <= 5.0),
+                "bidirectional": bool(
+                    abs(pair.next_choice_rate_a_to_b - pair.next_choice_rate_b_to_a)
+                    <= 5.0
+                ),
                 "strong_affinity": bool(pair.close_together_rate >= 50.0),
-                "high_follow_through": bool(max(pair.follow_through_a_to_b, pair.follow_through_b_to_a) >= 20.0)
-            }
+                "high_follow_through": bool(
+                    max(pair.follow_through_a_to_b, pair.follow_through_b_to_a) >= 20.0
+                ),
+            },
         }
-        
+
         return convert_numpy_types(result)
 
     except Exception as e:
@@ -1696,7 +1707,7 @@ async def get_candidate_round_progression(candidate_id: int, seats: int = 3):
     try:
         # Run STV with detailed tracking to get actual round progression
         tabulator = STVTabulator(database, seats=seats, detailed_tracking=True)
-        rounds = tabulator.run_stv_tabulation()
+        _ = tabulator.run_stv_tabulation()
 
         vote_flow = tabulator.get_vote_flow()
         if not vote_flow:
