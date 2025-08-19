@@ -592,6 +592,75 @@
 .btn.secondary:hover {
     background: #7f8c8d;
 }
+
+/* Directional Analysis Styles */
+.directional-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.metric-card {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+    transition: box-shadow 0.2s ease;
+}
+
+.metric-card:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.metric-card h5 {
+    margin: 0 0 0.5rem 0;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.metric-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #007bff;
+    margin: 0.5rem 0;
+}
+
+.metric-explanation {
+    font-size: 0.8rem;
+    color: #6c757d;
+    line-height: 1.4;
+    margin: 0;
+}
+
+.directional-insights {
+    background: #f0f8ff;
+    border: 1px solid #b8d4f0;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1.5rem;
+}
+
+.directional-insights h5 {
+    margin-top: 0;
+    color: #2c5aa0;
+}
+
+.insight-item {
+    background: white;
+    border-left: 4px solid #007bff;
+    padding: 0.5rem;
+    margin: 0.5rem 0;
+    border-radius: 0 4px 4px 0;
+}
+
+.directional-controls .control-row {
+    display: flex;
+    gap: 1rem;
+    align-items: end;
+    flex-wrap: wrap;
+}
 </style>
 {% endblock %}
 
@@ -776,6 +845,86 @@
     <div id="winner-analysis-loading" class="loading">Loading winner coalition analysis...</div>
     <div id="winner-analysis-content" style="display: none;">
         <div class="grid" id="winner-pairs"></div>
+    </div>
+</div>
+
+<!-- Directional Analysis: 3 Core Questions Framework -->
+<div class="card">
+    <h2>🎯 Directional Analysis: 3 Core Questions Framework</h2>
+    <p>Deep dive into how votes actually flow between candidates using directional proximity analysis</p>
+    
+    <div class="explanation-panel">
+        <h4>Understanding Directional Analysis</h4>
+        <p>This framework analyzes three fundamental questions about how voters connect two candidates:</p>
+        
+        <div class="visual-guide">
+            <h5>🔄 The 3 Core Questions:</h5>
+            <ul>
+                <li><strong>Next Choice Rate (A → B)</strong>: Of ballots that ranked A anywhere, what % had B immediately after A?</li>
+                <li><strong>Close-Together Rate (A & B)</strong>: % of ballots that list both A and B within the top 3 spots (in any order)</li>
+                <li><strong>Follow-Through (A → B reality)</strong>: When A was eliminated (or had surplus), what share actually landed on B?</li>
+            </ul>
+            
+            <p><strong>Why This Matters:</strong> Directional analysis reveals asymmetric relationships. For example, A's supporters might consistently rank B next, but B's supporters might prefer other candidates after B.</p>
+        </div>
+    </div>
+
+    <div class="directional-controls">
+        <h4>Select Candidate Pair for Analysis</h4>
+        <div class="control-row">
+            <div class="control-group">
+                <label for="directionalCandidate1">First Candidate</label>
+                <select id="directionalCandidate1">
+                    <option value="">Select first candidate...</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="directionalCandidate2">Second Candidate</label>
+                <select id="directionalCandidate2">
+                    <option value="">Select second candidate...</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <button id="runDirectionalAnalysis" class="btn btn-primary" disabled>Run Directional Analysis</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="directional-loading" class="loading" style="display: none;">Running directional analysis...</div>
+    <div id="directional-results" style="display: none;">
+        <h4>Directional Analysis Results</h4>
+        <div class="directional-metrics">
+            <div class="metric-card">
+                <h5 id="next-choice-title">Next Choice Rate (A → B)</h5>
+                <div class="metric-value" id="next-choice-a-to-b">--</div>
+                <p class="metric-explanation" id="next-choice-a-to-b-explanation">--</p>
+            </div>
+            <div class="metric-card">
+                <h5 id="next-choice-reverse-title">Next Choice Rate (B → A)</h5>
+                <div class="metric-value" id="next-choice-b-to-a">--</div>
+                <p class="metric-explanation" id="next-choice-b-to-a-explanation">--</p>
+            </div>
+            <div class="metric-card">
+                <h5>Close-Together Rate (A & B)</h5>
+                <div class="metric-value" id="close-together-rate">--</div>
+                <p class="metric-explanation" id="close-together-explanation">--</p>
+            </div>
+            <div class="metric-card">
+                <h5 id="follow-through-title">Follow-Through (A → B reality)</h5>
+                <div class="metric-value" id="follow-through-a-to-b">--</div>
+                <p class="metric-explanation" id="follow-through-a-to-b-explanation">--</p>
+            </div>
+            <div class="metric-card">
+                <h5 id="follow-through-reverse-title">Follow-Through (B → A reality)</h5>
+                <div class="metric-value" id="follow-through-b-to-a">--</div>
+                <p class="metric-explanation" id="follow-through-b-to-a-explanation">--</p>
+            </div>
+        </div>
+        
+        <div class="directional-insights">
+            <h5>📊 Key Insights</h5>
+            <div id="directional-insights-content"></div>
+        </div>
     </div>
 </div>
 
@@ -1046,6 +1195,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     setupNetworkControls();
     setupClusterControls();
     setupEnhancedControls();
+    setupDirectionalAnalysis();
 });
 
 // Load candidates for dropdowns
@@ -1065,11 +1215,28 @@ async function loadCandidates() {
         candidate1Select.innerHTML = '<option value="">Select first candidate...</option>';
         candidate2Select.innerHTML = '<option value="">Select second candidate...</option>';
 
+        // Also populate directional analysis dropdowns
+        const directionalCandidate1 = document.getElementById('directionalCandidate1');
+        const directionalCandidate2 = document.getElementById('directionalCandidate2');
+        
+        if (directionalCandidate1 && directionalCandidate2) {
+            directionalCandidate1.innerHTML = '<option value="">Select first candidate...</option>';
+            directionalCandidate2.innerHTML = '<option value="">Select second candidate...</option>';
+        }
+
         candidates.forEach(candidate => {
             const option1 = new Option(candidate.candidate_name, candidate.candidate_id);
             const option2 = new Option(candidate.candidate_name, candidate.candidate_id);
             candidate1Select.add(option1);
             candidate2Select.add(option2);
+            
+            // Add to directional analysis dropdowns
+            if (directionalCandidate1 && directionalCandidate2) {
+                const dirOption1 = new Option(candidate.candidate_name, candidate.candidate_id);
+                const dirOption2 = new Option(candidate.candidate_name, candidate.candidate_id);
+                directionalCandidate1.add(dirOption1);
+                directionalCandidate2.add(dirOption2);
+            }
         });
 
         console.log(`Loaded ${candidates.length} candidates into dropdowns`);
@@ -1864,6 +2031,114 @@ function setupEnhancedControls() {
 
     // Initialize explanation
     updateMethodologyExplanation();
+}
+
+// Setup directional analysis functionality
+function setupDirectionalAnalysis() {
+    const directionalCandidate1 = document.getElementById('directionalCandidate1');
+    const directionalCandidate2 = document.getElementById('directionalCandidate2');
+    const runAnalysisButton = document.getElementById('runDirectionalAnalysis');
+
+    // Enable/disable button based on both candidates being selected
+    function updateButtonState() {
+        const candidate1Selected = directionalCandidate1.value !== '';
+        const candidate2Selected = directionalCandidate2.value !== '';
+        const bothSelected = candidate1Selected && candidate2Selected;
+        const differentCandidates = directionalCandidate1.value !== directionalCandidate2.value;
+        
+        runAnalysisButton.disabled = !bothSelected || !differentCandidates;
+    }
+
+    // Run directional analysis
+    async function runDirectionalAnalysis() {
+        const candidate1Id = directionalCandidate1.value;
+        const candidate2Id = directionalCandidate2.value;
+
+        if (!candidate1Id || !candidate2Id || candidate1Id === candidate2Id) {
+            alert('Please select two different candidates for analysis.');
+            return;
+        }
+
+        // Show loading state
+        document.getElementById('directional-loading').style.display = 'block';
+        document.getElementById('directional-results').style.display = 'none';
+        runAnalysisButton.textContent = 'Analyzing...';
+        runAnalysisButton.disabled = true;
+
+        try {
+            const data = await fetchData(`/api/coalition/directional/${candidate1Id}/${candidate2Id}`);
+            
+            // Update the results display
+            displayDirectionalResults(data);
+            
+            // Show results
+            document.getElementById('directional-loading').style.display = 'none';
+            document.getElementById('directional-results').style.display = 'block';
+            
+        } catch (error) {
+            console.error('Directional analysis failed:', error);
+            document.getElementById('directional-loading').style.display = 'none';
+            alert('Failed to run directional analysis. Please try again.');
+        } finally {
+            runAnalysisButton.textContent = 'Run Directional Analysis';
+            runAnalysisButton.disabled = false;
+        }
+    }
+
+    // Display directional analysis results
+    function displayDirectionalResults(data) {
+        const analysis = data.directional_analysis;
+        const insights = data.summary_insights;
+
+        // Update metric cards
+        document.getElementById('next-choice-title').textContent = analysis.next_choice_rate_a_to_b.question;
+        document.getElementById('next-choice-a-to-b').textContent = analysis.next_choice_rate_a_to_b.value + '%';
+        document.getElementById('next-choice-a-to-b-explanation').textContent = analysis.next_choice_rate_a_to_b.explanation;
+
+        document.getElementById('next-choice-reverse-title').textContent = analysis.next_choice_rate_b_to_a.question;
+        document.getElementById('next-choice-b-to-a').textContent = analysis.next_choice_rate_b_to_a.value + '%';
+        document.getElementById('next-choice-b-to-a-explanation').textContent = analysis.next_choice_rate_b_to_a.explanation;
+
+        document.getElementById('close-together-rate').textContent = analysis.close_together_rate.value + '%';
+        document.getElementById('close-together-explanation').textContent = analysis.close_together_rate.explanation;
+
+        document.getElementById('follow-through-title').textContent = analysis.follow_through_a_to_b.question;
+        document.getElementById('follow-through-a-to-b').textContent = analysis.follow_through_a_to_b.value + '%';
+        document.getElementById('follow-through-a-to-b-explanation').textContent = analysis.follow_through_a_to_b.explanation;
+
+        document.getElementById('follow-through-reverse-title').textContent = analysis.follow_through_b_to_a.question;
+        document.getElementById('follow-through-b-to-a').textContent = analysis.follow_through_b_to_a.value + '%';
+        document.getElementById('follow-through-b-to-a-explanation').textContent = analysis.follow_through_b_to_a.explanation;
+
+        // Generate insights
+        let insightsHtml = '';
+        
+        if (insights.bidirectional) {
+            insightsHtml += '<div class="insight-item">🔄 <strong>Bidirectional Relationship:</strong> Both candidates have similar next-choice rates, suggesting mutual appeal.</div>';
+        } else {
+            insightsHtml += '<div class="insight-item">➡️ <strong>Asymmetric Relationship:</strong> The candidates have different levels of mutual appeal.</div>';
+        }
+        
+        if (insights.strong_affinity) {
+            insightsHtml += '<div class="insight-item">💪 <strong>Strong Affinity:</strong> High percentage of ballots rank both candidates in their top 3.</div>';
+        }
+        
+        if (insights.high_follow_through) {
+            insightsHtml += '<div class="insight-item">✅ <strong>High Follow-Through:</strong> Theoretical support translates well into actual vote transfers.</div>';
+        } else {
+            insightsHtml += '<div class="insight-item">⚠️ <strong>Low Follow-Through:</strong> Theoretical support doesn\'t translate well into actual transfers.</div>';
+        }
+
+        document.getElementById('directional-insights-content').innerHTML = insightsHtml;
+    }
+
+    // Event listeners
+    directionalCandidate1.addEventListener('change', updateButtonState);
+    directionalCandidate2.addEventListener('change', updateButtonState);
+    runAnalysisButton.addEventListener('click', runDirectionalAnalysis);
+
+    // Initialize button state
+    updateButtonState();
 }
 </script>
 

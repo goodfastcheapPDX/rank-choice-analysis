@@ -81,6 +81,13 @@ class DetailedCandidatePair:
     transfer_votes_1_to_2: int  # If 1 eliminated, how many go to 2
     transfer_votes_2_to_1: int  # If 2 eliminated, how many go to 1
 
+    # Directional analysis (3 Core Questions Framework)
+    next_choice_rate_a_to_b: float  # A→B: % of A ballots with B immediately after
+    next_choice_rate_b_to_a: float  # B→A: % of B ballots with A immediately after
+    close_together_rate: float  # A&B: % of ballots with both in top 3
+    follow_through_a_to_b: float  # A→B reality: actual transfer rate
+    follow_through_b_to_a: float  # B→A reality: actual transfer rate
+
     # Affinity scores
     basic_affinity_score: float  # Current Jaccard similarity
     normalized_affinity_score: float  # Normalized score based on method
@@ -404,6 +411,11 @@ class CoalitionAnalyzer:
             transfers_1_to_2 = self._estimate_transfer_votes(cand1_id, cand2_id)
             transfers_2_to_1 = self._estimate_transfer_votes(cand2_id, cand1_id)
 
+            # Calculate directional analysis (3 Core Questions Framework)
+            directional_metrics = self._calculate_directional_metrics(
+                cand1_id, cand2_id, name1, name2
+            )
+
             detailed_pair = DetailedCandidatePair(
                 candidate_1=cand1_id,
                 candidate_1_name=name1,
@@ -420,6 +432,11 @@ class CoalitionAnalyzer:
                 weak_coalition_votes=weak_votes,
                 transfer_votes_1_to_2=transfers_1_to_2,
                 transfer_votes_2_to_1=transfers_2_to_1,
+                next_choice_rate_a_to_b=directional_metrics["next_choice_rate_a_to_b"],
+                next_choice_rate_b_to_a=directional_metrics["next_choice_rate_b_to_a"],
+                close_together_rate=directional_metrics["close_together_rate"],
+                follow_through_a_to_b=directional_metrics["follow_through_a_to_b"],
+                follow_through_b_to_a=directional_metrics["follow_through_b_to_a"],
                 basic_affinity_score=basic_affinity,
                 normalized_affinity_score=normalized_affinity,
                 proximity_weighted_affinity=proximity_weighted_affinity,
@@ -473,6 +490,138 @@ class CoalitionAnalyzer:
 
         result = self.db.query(transfer_query)
         return result.iloc[0]["transfer_count"] if not result.empty else 0
+
+    def _calculate_directional_metrics(
+        self, cand1_id: int, cand2_id: int, name1: str, name2: str
+    ) -> Dict[str, float]:
+        """
+        Calculate directional analysis metrics for the 3 Core Questions Framework.
+        
+        Returns:
+            Dictionary with directional metrics
+        """
+        logger.debug(f"Calculating directional metrics for {name1} & {name2}")
+        
+        # 1. Next Choice Rate (A → B): % of A ballots with B immediately after
+        next_choice_a_to_b = self._calculate_next_choice_rate(cand1_id, cand2_id)
+        next_choice_b_to_a = self._calculate_next_choice_rate(cand2_id, cand1_id)
+        
+        # 2. Close-Together Rate (A & B): % of ballots with both in top 3
+        close_together_rate = self._calculate_close_together_rate(cand1_id, cand2_id)
+        
+        # 3. Follow-Through (A → B reality): actual transfer rate from STV
+        follow_through_a_to_b = self._calculate_follow_through_rate(cand1_id, cand2_id)
+        follow_through_b_to_a = self._calculate_follow_through_rate(cand2_id, cand1_id)
+        
+        return {
+            "next_choice_rate_a_to_b": next_choice_a_to_b,
+            "next_choice_rate_b_to_a": next_choice_b_to_a,
+            "close_together_rate": close_together_rate,
+            "follow_through_a_to_b": follow_through_a_to_b,
+            "follow_through_b_to_a": follow_through_b_to_a,
+        }
+
+    def _calculate_next_choice_rate(self, from_candidate: int, to_candidate: int) -> float:
+        """Calculate % of from_candidate ballots with to_candidate immediately after."""
+        query = f"""
+        WITH candidate_rankings AS (
+            SELECT BallotID, rank_position
+            FROM ballots_long
+            WHERE candidate_id = {from_candidate}
+        ),
+        immediate_next AS (
+            SELECT cr.BallotID
+            FROM candidate_rankings cr
+            JOIN ballots_long bl ON cr.BallotID = bl.BallotID 
+                AND bl.rank_position = cr.rank_position + 1
+                AND bl.candidate_id = {to_candidate}
+        )
+        SELECT 
+            COUNT(DISTINCT cr.BallotID) as total_from_ballots,
+            COUNT(DISTINCT inx.BallotID) as immediate_next_ballots
+        FROM candidate_rankings cr
+        LEFT JOIN immediate_next inx ON cr.BallotID = inx.BallotID
+        """
+        
+        result = self.db.query(query)
+        if not result.empty and result.iloc[0]["total_from_ballots"] > 0:
+            total = result.iloc[0]["total_from_ballots"]
+            immediate = result.iloc[0]["immediate_next_ballots"]
+            return (immediate / total) * 100.0
+        return 0.0
+
+    def _calculate_close_together_rate(self, cand1_id: int, cand2_id: int) -> float:
+        """Calculate % of ballots with both candidates in top 3."""
+        query = f"""
+        WITH both_in_top3 AS (
+            SELECT BallotID
+            FROM ballots_long
+            WHERE candidate_id IN ({cand1_id}, {cand2_id})
+              AND rank_position <= 3
+            GROUP BY BallotID
+            HAVING COUNT(DISTINCT candidate_id) = 2
+        ),
+        total_ballots_both AS (
+            SELECT BallotID
+            FROM ballots_long
+            WHERE candidate_id IN ({cand1_id}, {cand2_id})
+            GROUP BY BallotID
+            HAVING COUNT(DISTINCT candidate_id) = 2
+        )
+        SELECT 
+            COUNT(DISTINCT bit.BallotID) as both_top3,
+            COUNT(DISTINCT tbb.BallotID) as total_both
+        FROM total_ballots_both tbb
+        LEFT JOIN both_in_top3 bit ON tbb.BallotID = bit.BallotID
+        """
+        
+        result = self.db.query(query)
+        if not result.empty and result.iloc[0]["total_both"] > 0:
+            top3 = result.iloc[0]["both_top3"]
+            total = result.iloc[0]["total_both"]
+            return (top3 / total) * 100.0
+        return 0.0
+
+    def _calculate_follow_through_rate(self, from_candidate: int, to_candidate: int) -> float:
+        """Calculate actual transfer rate based on STV elimination patterns."""
+        # This is a simplified calculation - in a full implementation, we'd need
+        # access to actual STV round data to calculate real transfer rates
+        # For now, use next preference as proxy
+        query = f"""
+        WITH from_ballots AS (
+            SELECT DISTINCT BallotID
+            FROM ballots_long
+            WHERE candidate_id = {from_candidate}
+        ),
+        next_preferences AS (
+            SELECT fb.BallotID,
+                   bl.candidate_id,
+                   bl.rank_position,
+                   ROW_NUMBER() OVER (PARTITION BY fb.BallotID ORDER BY bl.rank_position) as pref_order
+            FROM from_ballots fb
+            JOIN ballots_long bl ON fb.BallotID = bl.BallotID
+            WHERE bl.candidate_id != {from_candidate}
+        ),
+        first_transfer AS (
+            SELECT COUNT(*) as transfers_to_candidate
+            FROM next_preferences
+            WHERE candidate_id = {to_candidate} AND pref_order = 1
+        ),
+        total_transfers AS (
+            SELECT COUNT(DISTINCT BallotID) as total_from_ballots
+            FROM from_ballots
+        )
+        SELECT 
+            COALESCE((SELECT transfers_to_candidate FROM first_transfer), 0) as transfers,
+            COALESCE((SELECT total_from_ballots FROM total_transfers), 0) as total
+        """
+        
+        result = self.db.query(query)
+        if not result.empty and result.iloc[0]["total"] > 0:
+            transfers = result.iloc[0]["transfers"]
+            total = result.iloc[0]["total"]
+            return (transfers / total) * 100.0
+        return 0.0
 
     def find_vote_transfer_patterns(self, from_candidate: int) -> Dict[int, Dict]:
         """

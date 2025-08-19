@@ -829,6 +829,11 @@ async def get_all_candidate_pairs_analysis(
                         "weak_coalition_votes": pair.weak_coalition_votes,
                         "transfer_votes_1_to_2": pair.transfer_votes_1_to_2,
                         "transfer_votes_2_to_1": pair.transfer_votes_2_to_1,
+                        "next_choice_rate_a_to_b": round(pair.next_choice_rate_a_to_b, 2),
+                        "next_choice_rate_b_to_a": round(pair.next_choice_rate_b_to_a, 2),
+                        "close_together_rate": round(pair.close_together_rate, 2),
+                        "follow_through_a_to_b": round(pair.follow_through_a_to_b, 2),
+                        "follow_through_b_to_a": round(pair.follow_through_b_to_a, 2),
                         "basic_affinity_score": round(pair.basic_affinity_score, 4),
                         "normalized_affinity_score": round(
                             pair.normalized_affinity_score, 4
@@ -1015,6 +1020,71 @@ async def get_coalition_type_breakdown():
         return breakdown
     except Exception as e:
         logger.error(f"Coalition type breakdown failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+
+@app.get("/api/coalition/directional/{candidate_1_id}/{candidate_2_id}")
+async def get_directional_analysis(candidate_1_id: int, candidate_2_id: int):
+    """Get detailed directional analysis for a specific candidate pair using the 3 Core Questions Framework."""
+    database = get_database()
+    if not database or not database.table_exists("ballots_long"):
+        raise HTTPException(status_code=400, detail="No data loaded")
+
+    try:
+        analyzer = CoalitionAnalyzer(database)
+        
+        # Get detailed pair analysis with directional metrics
+        pair = analyzer.get_detailed_pair_analysis(candidate_1_id, candidate_2_id)
+        if not pair:
+            raise HTTPException(
+                status_code=404, 
+                detail="Candidate pair not found or insufficient shared ballots"
+            )
+
+        # Return just the directional metrics with explanations
+        result = {
+            "candidate_1_id": pair.candidate_1,
+            "candidate_1_name": pair.candidate_1_name,
+            "candidate_2_id": pair.candidate_2,
+            "candidate_2_name": pair.candidate_2_name,
+            "directional_analysis": {
+                "next_choice_rate_a_to_b": {
+                    "value": round(pair.next_choice_rate_a_to_b, 2),
+                    "explanation": f"Of ballots that ranked {pair.candidate_1_name} anywhere, {pair.next_choice_rate_a_to_b:.1f}% had {pair.candidate_2_name} immediately after",
+                    "question": "Next Choice Rate (A → B)"
+                },
+                "next_choice_rate_b_to_a": {
+                    "value": round(pair.next_choice_rate_b_to_a, 2),
+                    "explanation": f"Of ballots that ranked {pair.candidate_2_name} anywhere, {pair.next_choice_rate_b_to_a:.1f}% had {pair.candidate_1_name} immediately after",
+                    "question": "Next Choice Rate (B → A)"
+                },
+                "close_together_rate": {
+                    "value": round(pair.close_together_rate, 2),
+                    "explanation": f"{pair.close_together_rate:.1f}% of ballots that ranked both candidates had them both in the top 3 spots",
+                    "question": "Close-Together Rate (A & B)"
+                },
+                "follow_through_a_to_b": {
+                    "value": round(pair.follow_through_a_to_b, 2),
+                    "explanation": f"When {pair.candidate_1_name} supporters' votes would transfer, {pair.follow_through_a_to_b:.1f}% actually went to {pair.candidate_2_name}",
+                    "question": "Follow-Through (A → B reality)"
+                },
+                "follow_through_b_to_a": {
+                    "value": round(pair.follow_through_b_to_a, 2),
+                    "explanation": f"When {pair.candidate_2_name} supporters' votes would transfer, {pair.follow_through_b_to_a:.1f}% actually went to {pair.candidate_1_name}",
+                    "question": "Follow-Through (B → A reality)"
+                }
+            },
+            "summary_insights": {
+                "bidirectional": bool(abs(pair.next_choice_rate_a_to_b - pair.next_choice_rate_b_to_a) <= 5.0),
+                "strong_affinity": bool(pair.close_together_rate >= 50.0),
+                "high_follow_through": bool(max(pair.follow_through_a_to_b, pair.follow_through_b_to_a) >= 20.0)
+            }
+        }
+        
+        return convert_numpy_types(result)
+
+    except Exception as e:
+        logger.error(f"Directional analysis failed: {e}")
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
 
