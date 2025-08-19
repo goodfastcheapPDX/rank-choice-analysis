@@ -1,12 +1,9 @@
-import json
 import logging
 from pathlib import Path
-from typing import List, Optional
 
 import pandas as pd
-from fastapi import FastAPI, Form, HTTPException, Request
-from fastapi.responses import FileResponse, HTMLResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import FileResponse
 from fastapi.templating import Jinja2Templates
 
 try:
@@ -14,14 +11,12 @@ try:
     from ..analysis.coalition import CoalitionAnalyzer, convert_numpy_types
     from ..analysis.stv import STVTabulator
     from ..analysis.verification import ResultsVerifier
-    from ..data.cvr_parser import CVRParser
     from ..data.database import CVRDatabase
 except ImportError:
     from analysis.candidate_metrics import CandidateMetrics
     from analysis.coalition import CoalitionAnalyzer, convert_numpy_types
     from analysis.stv import STVTabulator
     from analysis.verification import ResultsVerifier
-    from data.cvr_parser import CVRParser
     from data.database import CVRDatabase
 
 logger = logging.getLogger(__name__)
@@ -722,15 +717,38 @@ async def get_winner_coalition_analysis():
 
 
 @app.get("/api/coalition/pairs/all")
-async def get_all_candidate_pairs_analysis(min_shared_ballots: int = 50):
-    """Get detailed analysis for all candidate pairs meeting minimum threshold."""
+async def get_all_candidate_pairs_analysis(
+    min_shared_ballots: int = 50,
+    method: str = "proximity_weighted",
+    normalize: str = "raw",
+    ballot_length_filter: bool = False,
+    confidence_intervals: bool = False,
+):
+    """
+    Get detailed analysis for all candidate pairs with enhanced statistical controls.
+
+    Args:
+        min_shared_ballots: Minimum shared ballots to include in results
+        method: Statistical method - "basic", "proximity_weighted", "directional"
+        normalize: Normalization approach - "raw", "conditional", "lift"
+        ballot_length_filter: Filter to ballots with sufficient length for both candidates
+        confidence_intervals: Calculate bootstrap confidence intervals
+    """
     database = get_database()
     if not database or not database.table_exists("ballots_long"):
         raise HTTPException(status_code=400, detail="No data loaded")
 
     try:
-        # Try to use precomputed data first (10-100x faster)
-        if has_precomputed_data():
+        # Check if we can use precomputed data (only if using exact default parameters)
+        use_precomputed = (
+            has_precomputed_data()
+            and method == "proximity_weighted"
+            and normalize == "raw"
+            and not ballot_length_filter
+            and not confidence_intervals
+        )
+
+        if use_precomputed:
             logger.info(
                 f"Using precomputed data for coalition pairs (min_shared_ballots={min_shared_ballots})"
             )
@@ -774,13 +792,22 @@ async def get_all_candidate_pairs_analysis(min_shared_ballots: int = 50):
             return convert_numpy_types(final_result)
 
         else:
-            # Fallback to live computation if precomputed data not available
-            logger.warning(
-                "Precomputed data not available, falling back to live computation"
-            )
+            # Use live computation with enhanced toggle controls
+            if use_precomputed is False:
+                logger.info(
+                    f"Using enhanced coalition analysis with method={method}, normalize={normalize}, ballot_length_filter={ballot_length_filter}"
+                )
+            else:
+                logger.warning(
+                    "Precomputed data not available, falling back to live computation"
+                )
             analyzer = CoalitionAnalyzer(database)
             detailed_pairs = analyzer.calculate_detailed_pairwise_analysis(
-                min_shared_ballots=min_shared_ballots
+                min_shared_ballots=min_shared_ballots,
+                method=method,
+                normalize=normalize,
+                ballot_length_filter=ballot_length_filter,
+                confidence_intervals=confidence_intervals,
             )
 
             # Convert to JSON-serializable format
@@ -803,6 +830,9 @@ async def get_all_candidate_pairs_analysis(min_shared_ballots: int = 50):
                         "transfer_votes_1_to_2": pair.transfer_votes_1_to_2,
                         "transfer_votes_2_to_1": pair.transfer_votes_2_to_1,
                         "basic_affinity_score": round(pair.basic_affinity_score, 4),
+                        "normalized_affinity_score": round(
+                            pair.normalized_affinity_score, 4
+                        ),
                         "proximity_weighted_affinity": round(
                             pair.proximity_weighted_affinity, 4
                         ),

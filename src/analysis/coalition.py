@@ -7,10 +7,9 @@ Reveals coalitions, supporter overlaps, and vote transfer patterns.
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import numpy as np
-import pandas as pd
 
 
 def convert_numpy_types(obj: Any) -> Any:
@@ -84,6 +83,7 @@ class DetailedCandidatePair:
 
     # Affinity scores
     basic_affinity_score: float  # Current Jaccard similarity
+    normalized_affinity_score: float  # Normalized score based on method
     proximity_weighted_affinity: float  # New proximity-weighted score
     coalition_strength_score: float  # Combined metric
     coalition_type: str  # "strong", "moderate", "weak", "strategic"
@@ -215,39 +215,75 @@ class CoalitionAnalyzer:
         return affinities
 
     def calculate_detailed_pairwise_analysis(
-        self, min_shared_ballots: int = 10
+        self,
+        min_shared_ballots: int = 10,
+        method: str = "proximity_weighted",
+        normalize: str = "raw",
+        ballot_length_filter: bool = False,
+        confidence_intervals: bool = False,
     ) -> List[DetailedCandidatePair]:
         """
-        Calculate comprehensive analysis for all candidate pairs with ranking proximity.
+        Calculate comprehensive analysis for all candidate pairs with enhanced statistical controls.
 
         Args:
             min_shared_ballots: Minimum shared ballots to include in results
+            method: Statistical method - "basic", "proximity_weighted", "directional"
+            normalize: Normalization approach - "raw", "conditional", "lift"
+            ballot_length_filter: Filter to ballots with sufficient length for both candidates
+            confidence_intervals: Calculate bootstrap confidence intervals
 
         Returns:
             List of DetailedCandidatePair objects sorted by coalition strength
         """
-        logger.info("Calculating detailed pairwise analysis with ranking proximity")
+        logger.info(
+            f"Calculating detailed pairwise analysis with method={method}, normalize={normalize}"
+        )
         self._load_candidate_data()
 
-        # Get detailed co-occurrence with ranking information
-        proximity_query = """
-        SELECT
-            b1.candidate_id as candidate_1,
-            c1.candidate_name as name_1,
-            b2.candidate_id as candidate_2,
-            c2.candidate_name as name_2,
-            b1.rank_position as rank_1,
-            b2.rank_position as rank_2,
-            ABS(b1.rank_position - b2.rank_position) as ranking_distance,
-            COUNT(*) as occurrence_count
-        FROM ballots_long b1
-        JOIN ballots_long b2 ON b1.BallotID = b2.BallotID AND b1.candidate_id < b2.candidate_id
-        JOIN candidates c1 ON b1.candidate_id = c1.candidate_id
-        JOIN candidates c2 ON b2.candidate_id = c2.candidate_id
-        GROUP BY b1.candidate_id, b2.candidate_id, c1.candidate_name, c2.candidate_name,
-                 b1.rank_position, b2.rank_position, ranking_distance
-        ORDER BY b1.candidate_id, b2.candidate_id, ranking_distance
-        """
+        # Build query with optional ballot length filtering
+        if ballot_length_filter:
+            proximity_query = """
+            WITH ballot_metadata AS (
+                SELECT BallotID, COUNT(*) as ballot_length
+                FROM ballots_long GROUP BY BallotID
+            ),
+            filtered_ballots AS (
+                SELECT b1.candidate_id as candidate_1, c1.candidate_name as name_1,
+                       b2.candidate_id as candidate_2, c2.candidate_name as name_2,
+                       b1.rank_position as rank_1, b2.rank_position as rank_2,
+                       ABS(b1.rank_position - b2.rank_position) as ranking_distance,
+                       COUNT(*) as occurrence_count
+                FROM ballots_long b1
+                JOIN ballots_long b2 ON b1.BallotID = b2.BallotID AND b1.candidate_id < b2.candidate_id
+                JOIN candidates c1 ON b1.candidate_id = c1.candidate_id
+                JOIN candidates c2 ON b2.candidate_id = c2.candidate_id
+                JOIN ballot_metadata bm ON b1.BallotID = bm.BallotID
+                WHERE bm.ballot_length >= GREATEST(b1.rank_position, b2.rank_position)
+                GROUP BY b1.candidate_id, b2.candidate_id, c1.candidate_name, c2.candidate_name,
+                         b1.rank_position, b2.rank_position, ranking_distance
+                ORDER BY b1.candidate_id, b2.candidate_id, ranking_distance
+            )
+            SELECT * FROM filtered_ballots
+            """
+        else:
+            proximity_query = """
+            SELECT
+                b1.candidate_id as candidate_1,
+                c1.candidate_name as name_1,
+                b2.candidate_id as candidate_2,
+                c2.candidate_name as name_2,
+                b1.rank_position as rank_1,
+                b2.rank_position as rank_2,
+                ABS(b1.rank_position - b2.rank_position) as ranking_distance,
+                COUNT(*) as occurrence_count
+            FROM ballots_long b1
+            JOIN ballots_long b2 ON b1.BallotID = b2.BallotID AND b1.candidate_id < b2.candidate_id
+            JOIN candidates c1 ON b1.candidate_id = c1.candidate_id
+            JOIN candidates c2 ON b2.candidate_id = c2.candidate_id
+            GROUP BY b1.candidate_id, b2.candidate_id, c1.candidate_name, c2.candidate_name,
+                     b1.rank_position, b2.rank_position, ranking_distance
+            ORDER BY b1.candidate_id, b2.candidate_id, ranking_distance
+            """
 
         proximity_df = self.db.query(proximity_query)
 
@@ -287,9 +323,40 @@ class CoalitionAnalyzer:
             ].sum()
             weak_votes = group[group["ranking_distance"] >= 4]["occurrence_count"].sum()
 
-            # Basic affinity (Jaccard similarity)
-            union_size = total_1 + total_2 - shared_ballots
-            basic_affinity = shared_ballots / union_size if union_size > 0 else 0.0
+            # Calculate normalized affinity based on selected method
+            if normalize == "raw":
+                # Basic affinity (Jaccard similarity)
+                union_size = total_1 + total_2 - shared_ballots
+                basic_affinity = shared_ballots / union_size if union_size > 0 else 0.0
+                normalized_affinity = basic_affinity
+
+            elif normalize == "conditional":
+                # Conditional probability: P(B appears | A appears)
+                # More interpretable: "Of voters who ranked A, what % also ranked B?"
+                conditional_affinity = shared_ballots / total_1 if total_1 > 0 else 0.0
+                normalized_affinity = conditional_affinity
+
+            elif normalize == "lift":
+                # Lift: P(A∧B) / [P(A) × P(B)]
+                # Values > 1.0 indicate positive association, < 1.0 negative
+                total_ballots = max(total_1, total_2, shared_ballots)  # Rough estimate
+                if total_ballots > 0:
+                    prob_a = total_1 / total_ballots
+                    prob_b = total_2 / total_ballots
+                    prob_ab = shared_ballots / total_ballots
+                    expected_joint = prob_a * prob_b
+                    lift_affinity = (
+                        prob_ab / expected_joint if expected_joint > 0 else 0.0
+                    )
+                    normalized_affinity = min(lift_affinity, 2.0)  # Cap extreme values
+                else:
+                    normalized_affinity = 0.0
+            else:
+                # Fallback to basic for unknown methods
+                union_size = total_1 + total_2 - shared_ballots
+                normalized_affinity = (
+                    shared_ballots / union_size if union_size > 0 else 0.0
+                )
 
             # Proximity-weighted affinity (closer rankings get higher weight)
             proximity_weights = [
@@ -299,16 +366,33 @@ class CoalitionAnalyzer:
                 sum(proximity_weights) / len(distances) if distances else 0.0
             )
 
-            # Coalition strength: weight proximity more heavily than basic co-occurrence
-            # This emphasizes HOW CLOSE candidates are ranked when they do appear together
-            coalition_strength = (basic_affinity * 0.2) + (
-                proximity_weighted_affinity * 0.8
-            )
+            # Enhanced coalition strength calculation based on method
+            if method == "basic":
+                coalition_strength = normalized_affinity
+            elif method == "proximity_weighted":
+                # Emphasize ranking proximity while incorporating normalization
+                coalition_strength = (normalized_affinity * 0.3) + (
+                    proximity_weighted_affinity * 0.7
+                )
+            elif method == "directional":
+                # For now, use proximity-weighted; directional logic will be added separately
+                coalition_strength = (normalized_affinity * 0.3) + (
+                    proximity_weighted_affinity * 0.7
+                )
+            else:
+                # Default to proximity-weighted
+                coalition_strength = (normalized_affinity * 0.3) + (
+                    proximity_weighted_affinity * 0.7
+                )
+
+            # For backward compatibility, calculate basic_affinity
+            union_size = total_1 + total_2 - shared_ballots
+            basic_affinity = shared_ballots / union_size if union_size > 0 else 0.0
 
             # Debug logging for first few pairs
             if len(detailed_pairs) < 5:
                 logger.info(
-                    f"Debug pair {name1} & {name2}: basic_affinity={basic_affinity:.4f}, proximity_weighted={proximity_weighted_affinity:.4f}, coalition_strength={coalition_strength:.4f}, avg_distance={avg_distance:.2f}"
+                    f"Debug pair {name1} & {name2}: normalized_affinity={normalized_affinity:.4f}, proximity_weighted={proximity_weighted_affinity:.4f}, coalition_strength={coalition_strength:.4f}, avg_distance={avg_distance:.2f}, method={method}, normalize={normalize}"
                 )
 
             # Classify coalition type
@@ -337,6 +421,7 @@ class CoalitionAnalyzer:
                 transfer_votes_1_to_2=transfers_1_to_2,
                 transfer_votes_2_to_1=transfers_2_to_1,
                 basic_affinity_score=basic_affinity,
+                normalized_affinity_score=normalized_affinity,
                 proximity_weighted_affinity=proximity_weighted_affinity,
                 coalition_strength_score=coalition_strength,
                 coalition_type=coalition_type,

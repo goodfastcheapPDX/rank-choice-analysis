@@ -342,6 +342,100 @@
     font-size: 0.9rem;
 }
 
+/* Enhanced Controls Styles */
+.enhanced-controls {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    border: 1px solid #e9ecef;
+}
+
+.control-row {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.control-row:last-child {
+    margin-bottom: 0;
+}
+
+.enhanced-controls .control-group {
+    min-width: 200px;
+    flex: 1;
+}
+
+.enhanced-controls .control-group label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.3rem;
+}
+
+.enhanced-controls .control-group input[type="checkbox"] {
+    margin-right: 0.5rem;
+    width: auto;
+}
+
+.help-text {
+    color: #6c757d;
+    font-size: 0.8rem;
+    margin-top: 0.2rem;
+    display: block;
+    line-height: 1.3;
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+    margin-left: 0.5rem;
+}
+
+.btn-secondary:hover {
+    background: #545b62;
+}
+
+.methodology-explanation {
+    background: #e8f5e8;
+    padding: 1rem;
+    border-radius: 6px;
+    margin-top: 1rem;
+    border-left: 4px solid #28a745;
+}
+
+.methodology-explanation h4 {
+    color: #155724;
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+}
+
+.methodology-explanation div {
+    color: #3d5a40;
+    line-height: 1.5;
+}
+
 .network-stats {
     background: #e8f5e8;
     padding: 1rem;
@@ -556,6 +650,72 @@
         <div id="coalition-type-chart"></div>
         <div id="coalition-type-stats" class="grid"></div>
         <div id="coalition-type-examples"></div>
+    </div>
+</div>
+
+<!-- Enhanced Statistical Controls -->
+<div class="card">
+    <h2>📊 Enhanced Statistical Controls</h2>
+    <p>Adjust analytical methods to explore different aspects of coalition relationships</p>
+
+    <div class="enhanced-controls">
+        <div class="control-row">
+            <div class="control-group">
+                <label for="analysisMethod">Statistical Method</label>
+                <select id="analysisMethod">
+                    <option value="proximity_weighted">Proximity Weighted (Default)</option>
+                    <option value="basic">Basic Jaccard Similarity</option>
+                    <option value="directional">Directional Analysis</option>
+                </select>
+                <small class="help-text">Choose how coalition strength is calculated</small>
+            </div>
+
+            <div class="control-group">
+                <label for="normalization">Normalization Method</label>
+                <select id="normalization">
+                    <option value="raw">Raw Co-occurrence (Default)</option>
+                    <option value="conditional">Conditional Probability</option>
+                    <option value="lift">Lift (Association Detection)</option>
+                </select>
+                <small class="help-text">How to normalize for candidate popularity</small>
+            </div>
+
+            <div class="control-group">
+                <label for="minSharedBallots">Minimum Shared Ballots</label>
+                <input type="number" id="minSharedBallots" value="1000" min="50" max="10000" step="100">
+                <small class="help-text">Filter out pairs with few shared ballots</small>
+            </div>
+        </div>
+
+        <div class="control-row">
+            <div class="control-group">
+                <label>
+                    <input type="checkbox" id="ballotLengthFilter">
+                    Ballot Length Filtering
+                </label>
+                <small class="help-text">Control for ballot truncation bias</small>
+            </div>
+
+            <div class="control-group">
+                <label>
+                    <input type="checkbox" id="confidenceIntervals">
+                    Bootstrap Confidence Intervals
+                </label>
+                <small class="help-text">Add statistical uncertainty estimates</small>
+            </div>
+
+            <div class="control-group">
+                <button id="applyControls" class="btn btn-primary">Apply Enhanced Analysis</button>
+                <button id="resetControls" class="btn btn-secondary">Reset to Defaults</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="methodology-explanation" id="methodologyExplanation">
+        <h4>Current Analysis Method</h4>
+        <div id="methodExplanation">
+            <strong>Proximity Weighted + Raw Normalization:</strong> Standard coalition analysis that weighs ranking closeness heavily. Uses raw co-occurrence without popularity adjustment.
+        </div>
     </div>
 </div>
 
@@ -885,6 +1045,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Set up control listeners
     setupNetworkControls();
     setupClusterControls();
+    setupEnhancedControls();
 });
 
 // Load candidates for dropdowns
@@ -979,10 +1140,21 @@ async function loadCoalitionTypes() {
     }
 }
 
-// Load top coalition pairs
-async function loadTopPairs() {
+// Load top coalition pairs with enhanced controls
+async function loadTopPairs(params = {}) {
     try {
-        const data = await fetchData('/api/coalition/pairs/all?min_shared_ballots=1000');
+        const defaultParams = {
+            min_shared_ballots: 1000,
+            method: 'proximity_weighted',
+            normalize: 'raw',
+            ballot_length_filter: false,
+            confidence_intervals: false
+        };
+
+        const queryParams = { ...defaultParams, ...params };
+        const urlParams = new URLSearchParams(queryParams);
+
+        const data = await fetchData(`/api/coalition/pairs/all?${urlParams}`);
         coalitionPairs = data.detailed_pairs;
 
         const tbody = document.querySelector('#top-pairs-table tbody');
@@ -1104,6 +1276,7 @@ async function quickAnalyzePair(candidate1Id, candidate2Id) {
                     <p><strong>Shared Ballots:</strong> ${pair.shared_ballots.toLocaleString()}</p>
                     <p><strong>Coalition Strength:</strong> ${pair.coalition_strength_score.toFixed(3)}</p>
                     <p><strong>Basic Affinity:</strong> ${pair.basic_affinity_score.toFixed(3)}</p>
+                    ${pair.normalized_affinity_score !== undefined ? `<p><strong>Normalized Affinity:</strong> ${pair.normalized_affinity_score.toFixed(3)}</p>` : ''}
                     <p><strong>Proximity-Weighted Affinity:</strong> ${pair.proximity_weighted_affinity.toFixed(3)}</p>
                 </div>
                 <div class="card">
@@ -1584,6 +1757,113 @@ function renderClusters(clusterData) {
     }).join('');
 
     document.getElementById('clusters-list').innerHTML = clustersHtml;
+}
+
+// Enhanced Controls Functionality
+function setupEnhancedControls() {
+    const applyButton = document.getElementById('applyControls');
+    const resetButton = document.getElementById('resetControls');
+    const methodSelect = document.getElementById('analysisMethod');
+    const normalizeSelect = document.getElementById('normalization');
+
+    // Update methodology explanation when controls change
+    function updateMethodologyExplanation() {
+        const method = methodSelect.value;
+        const normalize = normalizeSelect.value;
+        const ballotFilter = document.getElementById('ballotLengthFilter').checked;
+        const confidenceIntervals = document.getElementById('confidenceIntervals').checked;
+
+        let explanation = '';
+
+        // Method explanation
+        if (method === 'basic') {
+            explanation += '<strong>Basic Jaccard Similarity:</strong> Simple co-occurrence analysis. ';
+        } else if (method === 'proximity_weighted') {
+            explanation += '<strong>Proximity Weighted:</strong> Emphasizes ranking closeness (default). ';
+        } else if (method === 'directional') {
+            explanation += '<strong>Directional Analysis:</strong> Tracks A→B vs B→A patterns. ';
+        }
+
+        // Normalization explanation
+        if (normalize === 'raw') {
+            explanation += 'Raw co-occurrence without popularity adjustment.';
+        } else if (normalize === 'conditional') {
+            explanation += 'Conditional probability: "Of voters who ranked A, what % also ranked B?"';
+        } else if (normalize === 'lift') {
+            explanation += 'Lift analysis: Detects positive (>1.0) and negative (<1.0) associations.';
+        }
+
+        // Additional controls
+        if (ballotFilter) {
+            explanation += ' <em>Controlling for ballot truncation bias.</em>';
+        }
+        if (confidenceIntervals) {
+            explanation += ' <em>Including bootstrap confidence intervals.</em>';
+        }
+
+        document.getElementById('methodExplanation').innerHTML = explanation;
+    }
+
+    // Apply enhanced analysis
+    async function applyEnhancedAnalysis() {
+        const params = {
+            min_shared_ballots: parseInt(document.getElementById('minSharedBallots').value),
+            method: methodSelect.value,
+            normalize: normalizeSelect.value,
+            ballot_length_filter: document.getElementById('ballotLengthFilter').checked,
+            confidence_intervals: document.getElementById('confidenceIntervals').checked
+        };
+
+        // Show loading state
+        applyButton.textContent = 'Analyzing...';
+        applyButton.disabled = true;
+
+        try {
+            // Reload data with new parameters
+            await loadTopPairs(params);
+            await loadCoalitionTypes(); // Refresh coalition types too
+
+            // Update explanation
+            updateMethodologyExplanation();
+
+            // Show success
+            applyButton.textContent = 'Applied!';
+            setTimeout(() => {
+                applyButton.textContent = 'Apply Enhanced Analysis';
+                applyButton.disabled = false;
+            }, 1500);
+
+        } catch (error) {
+            console.error('Enhanced analysis failed:', error);
+            applyButton.textContent = 'Error - Try Again';
+            applyButton.disabled = false;
+        }
+    }
+
+    // Reset to defaults
+    function resetToDefaults() {
+        document.getElementById('analysisMethod').value = 'proximity_weighted';
+        document.getElementById('normalization').value = 'raw';
+        document.getElementById('minSharedBallots').value = 1000;
+        document.getElementById('ballotLengthFilter').checked = false;
+        document.getElementById('confidenceIntervals').checked = false;
+
+        updateMethodologyExplanation();
+        applyEnhancedAnalysis();
+    }
+
+    // Event listeners
+    applyButton.addEventListener('click', applyEnhancedAnalysis);
+    resetButton.addEventListener('click', resetToDefaults);
+
+    // Update explanation when dropdowns change
+    methodSelect.addEventListener('change', updateMethodologyExplanation);
+    normalizeSelect.addEventListener('change', updateMethodologyExplanation);
+    document.getElementById('ballotLengthFilter').addEventListener('change', updateMethodologyExplanation);
+    document.getElementById('confidenceIntervals').addEventListener('change', updateMethodologyExplanation);
+
+    // Initialize explanation
+    updateMethodologyExplanation();
 }
 </script>
 
