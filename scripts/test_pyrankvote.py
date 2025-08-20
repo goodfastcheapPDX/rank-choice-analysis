@@ -13,9 +13,9 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from analysis.stv import STVTabulator
-from analysis.stv_pyrankvote import PyRankVoteSTVTabulator
-from data.database import CVRDatabase
+from analysis.stv import STVTabulator  # noqa: E402
+from analysis.stv_pyrankvote import PyRankVoteSTVTabulator  # noqa: E402
+from data.database import CVRDatabase  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)

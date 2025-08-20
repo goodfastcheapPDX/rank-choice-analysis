@@ -10,9 +10,9 @@ from pathlib import Path
 # Add src to path so we can import our modules
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from analysis.stv import STVTabulator
-from analysis.verification import ResultsVerifier
-from data.cvr_parser import CVRParser
+from analysis.stv import STVTabulator  # noqa: E402
+from analysis.verification import ResultsVerifier  # noqa: E402
+from data.cvr_parser import CVRParser  # noqa: E402
 
 
 def test_with_sample_data():
@@ -68,7 +68,7 @@ def test_with_sample_data():
             print(f"✓ Created {norm_stats['total_vote_records']} vote records")
 
             # Get summary
-            summary = parser.get_summary_statistics()
+            parser.get_summary_statistics()  # Get summary for validation
             print("✓ Generated summary statistics")
 
             # Get first choice results
@@ -85,7 +85,7 @@ def test_with_sample_data():
             print(f"✓ STV completed in {len(rounds)} rounds")
             print(f"✓ Winners: {tabulator.winners}")
 
-            final_results = tabulator.get_final_results()
+            tabulator.get_final_results()  # Generate results for validation
             print("✓ Generated final results")
 
         print("\n=== Testing Results Verification ===")
@@ -146,8 +146,9 @@ def test_with_sample_data():
             try:
                 os.unlink(db_path)
                 print(f"Cleaned up test database: {db_path}")
-            except:
-                pass
+            except Exception:
+                # Ignore cleanup errors - database file might be in use
+                print(f"Note: Could not remove test database {db_path} (may be in use)")
 
 
 if __name__ == "__main__":

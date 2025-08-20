@@ -19,16 +19,16 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
-import pandas as pd
+# import pandas as pd  # Commented out - not used in this script
 
 # Add src to path so we can import our modules
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from analysis.candidate_metrics import CandidateMetrics
-from analysis.coalition import CoalitionAnalyzer
-from data.database import CVRDatabase
+# from analysis.candidate_metrics import CandidateMetrics  # noqa: E402 - Commented out unused
+# from analysis.coalition import CoalitionAnalyzer  # noqa: E402 - Commented out unused
+from data.database import CVRDatabase  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -382,11 +382,11 @@ class PrecomputeProcessor:
             operation_time = time.time() - operation_start
             logger.info(f"✓ Data type optimization completed in {operation_time:.2f}s")
             logger.info(
-                f"✓ Applied optimized data types with TINYINT, VARCHAR(n), DECIMAL precision"
+                "✓ Applied optimized data types with TINYINT, VARCHAR(n), DECIMAL precision"
             )
-            logger.info(f"✓ Created performance indexes for common query patterns")
+            logger.info("✓ Created performance indexes for common query patterns")
             logger.info(
-                f"✓ ballots_long table optimization available but not applied (preserves existing data)"
+                "✓ ballots_long table optimization available but not applied (preserves existing data)"
             )
 
             # Update performance stats
@@ -811,7 +811,7 @@ def main():
                 sys.exit(0)
 
         # Run precomputation
-        results = processor.run_full_precomputation(args.min_shared_ballots)
+        processor.run_full_precomputation(args.min_shared_ballots)  # Run precomputation
 
         if args.validate:
             logger.info("\n=== Validation Checks ===")
@@ -861,7 +861,7 @@ def main():
 
         print(f"\n🎉 Success! Precomputed data ready for {processor.election_id}")
         print(f"📁 Data location: {processor.data_dir}")
-        print(f"⚡ Expected API performance improvements: 5-100x faster")
+        print("⚡ Expected API performance improvements: 5-100x faster")
 
     except Exception as e:
         logger.error(f"Precomputation failed: {e}")

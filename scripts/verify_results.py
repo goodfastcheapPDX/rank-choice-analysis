@@ -11,10 +11,11 @@ from pathlib import Path
 # Add src to path so we can import our modules
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from analysis.stv import STVTabulator
-from analysis.verification import ResultsVerifier
-from data.cvr_parser import CVRParser
-from data.database import CVRDatabase
+from analysis.stv import STVTabulator  # noqa: E402
+from analysis.verification import ResultsVerifier  # noqa: E402
+
+# from data.cvr_parser import CVRParser  # noqa: F401 - Commented out unused import
+from data.database import CVRDatabase  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -53,7 +54,7 @@ def main():
 
             # Run our STV tabulation
             tabulator = STVTabulator(db, seats=args.seats)
-            rounds = tabulator.run_stv_tabulation()
+            tabulator.run_stv_tabulation()  # Run tabulation and store in tabulator
 
             # Get our results
             our_winners = tabulator.winners

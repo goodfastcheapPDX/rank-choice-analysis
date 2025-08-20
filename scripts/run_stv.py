@@ -11,8 +11,8 @@ from pathlib import Path
 # Add src to path so we can import our modules
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from analysis.stv import STVTabulator
-from data.database import CVRDatabase
+from analysis.stv import STVTabulator  # noqa: E402
+from data.database import CVRDatabase  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -52,10 +52,10 @@ def main():
             tabulator = STVTabulator(db, seats=args.seats)
 
             # Run tabulation
-            rounds = tabulator.run_stv_tabulation()
+            tabulator.run_stv_tabulation()  # Store results in tabulator object
 
             # Display round-by-round results
-            print(f"\n=== Round-by-Round Results ===")
+            print("\n=== Round-by-Round Results ===")
             round_summary = tabulator.get_round_summary()
 
             # Get candidate names for display
@@ -93,7 +93,7 @@ def main():
                     )
 
             # Display final results
-            print(f"\n=== Final Results ===")
+            print("\n=== Final Results ===")
             final_results = tabulator.get_final_results()
 
             print(f"\nElected ({len(tabulator.winners)} of {args.seats} seats):")
@@ -103,7 +103,7 @@ def main():
                     f"  {i}. {row['candidate_name']:30s}: {row['final_votes']:8.1f} votes (Round {row['election_round']})"
                 )
 
-            print(f"\nNot Elected:")
+            print("\nNot Elected:")
             not_elected = final_results[final_results["status"] == "not_elected"].head(
                 10
             )
@@ -138,7 +138,7 @@ def main():
                     f"✓ Round summary exported to: {export_path.with_stem(export_path.stem + '_rounds').with_suffix('.csv')}"
                 )
 
-            print(f"\n✓ STV tabulation completed successfully")
+            print("\n✓ STV tabulation completed successfully")
 
     except Exception as e:
         logger.error(f"Error running STV tabulation: {e}")

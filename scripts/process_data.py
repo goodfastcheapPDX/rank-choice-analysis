@@ -12,7 +12,7 @@ from pathlib import Path
 # Add src to path so we can import our modules
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from data.cvr_parser import CVRParser
+from data.cvr_parser import CVRParser  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -74,7 +74,7 @@ def main():
             # Step 5: First choice results
             logger.info("=== Step 5: First Choice Results ===")
             first_choice = parser.get_first_choice_totals()
-            print(f"\nTop 10 First Choice Results:")
+            print("\nTop 10 First Choice Results:")
             for _, row in first_choice.head(10).iterrows():
                 print(
                     f"  {row['candidate_name']:25s}: {row['first_choice_votes']:5d} votes ({row['percentage']:5.1f}%)"
@@ -82,7 +82,7 @@ def main():
 
             # Step 6: Ballot completion patterns
             completion = parser.get_ballot_completion_stats()
-            print(f"\nBallot Completion Patterns:")
+            print("\nBallot Completion Patterns:")
             for _, row in completion.iterrows():
                 print(
                     f"  {row['ranks_used']} ranks: {row['ballot_count']:5d} ballots ({row['percentage']:5.1f}%)"
@@ -101,7 +101,7 @@ def main():
                 ].sum()
                 rank1_rate = rank1_votes / total_ballots
 
-                print(f"\nValidation Results:")
+                print("\nValidation Results:")
                 print(
                     f"✓ Rank 1 participation: {rank1_rate:.1%} ({rank1_votes}/{total_ballots})"
                 )
