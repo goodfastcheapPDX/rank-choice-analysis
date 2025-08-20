@@ -1,6 +1,7 @@
 import logging
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+
+# from pathlib import Path  # Not used in this module
+from typing import Dict, Optional
 
 import pandas as pd
 
@@ -103,7 +104,7 @@ class CVRParser:
         choice_columns = self.db.query(
             "SELECT DISTINCT column_name FROM candidate_columns"
         )
-        column_list = "', '".join(choice_columns["column_name"].tolist())
+        # column_list = "', '".join(choice_columns["column_name"].tolist())  # Not used
 
         # Create dynamic SQL for unpivoting using UNION ALL approach
         # Build individual SELECT statements for each choice column

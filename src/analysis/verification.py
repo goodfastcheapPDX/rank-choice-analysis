@@ -1,7 +1,7 @@
 import logging
 import re
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 import pandas as pd
 
@@ -133,11 +133,10 @@ class OfficialResultsParser:
         # We need to search in the full file, not just data_lines
         # This will be handled in parse_results() method instead
 
-        # Find defeated candidates line in data section
-        defeated_line = None
+        # Find defeated candidates line in data section (for potential future use)
         for line in data_lines:
             if line.startswith("Defeated"):
-                defeated_line = line
+                break  # Found defeated line
 
         # Parse candidate data
         candidate_data = []
@@ -157,12 +156,12 @@ class OfficialResultsParser:
                     if len(parts) > 1 and parts[1]:
                         try:
                             first_choice_votes = float(parts[1])
-                        except:
+                        except ValueError:
                             pass
 
                     # Extract final round data (last non-empty vote count)
                     final_votes = 0
-                    final_percentage = 0
+                    # final_percentage = 0  # Not currently used
 
                     # Work backwards to find final vote count
                     for i in range(len(parts) - 1, 0, -1):
@@ -172,7 +171,7 @@ class OfficialResultsParser:
                                 if "%" not in parts[i] and "." in parts[i]:
                                     final_votes = float(parts[i])
                                     break
-                            except:
+                            except ValueError:
                                 continue
 
                     candidate_data.append(

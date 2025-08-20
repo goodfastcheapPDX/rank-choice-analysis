@@ -4,7 +4,7 @@ import threading
 import time
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional
 
 import duckdb
 import pandas as pd
@@ -36,7 +36,7 @@ class DatabaseConnectionManager:
         Returns:
             DuckDB connection
         """
-        connection_key = f"{db_path}_{read_only}"
+        # connection_key = f"{db_path}_{read_only}"  # Not currently used for pooling
 
         for attempt in range(max_retries):
             try:
@@ -53,7 +53,7 @@ class DatabaseConnectionManager:
             except duckdb.IOException as e:
                 if "Conflicting lock" in str(e) and attempt < max_retries - 1:
                     # Exponential backoff with jitter
-                    wait_time = (2**attempt) + random.uniform(0, 1)
+                    wait_time = (2**attempt) + random.uniform(0, 1)  # nosec B311
                     logger.warning(
                         f"Database locked, retrying in {wait_time:.2f}s (attempt {attempt + 1}/{max_retries})"
                     )
@@ -213,7 +213,7 @@ class CVRDatabase:
                     return temp_conn.execute(sql).fetchdf()
             except Exception as e:
                 if attempt < max_retries - 1:
-                    wait_time = (2**attempt) + random.uniform(0, 0.5)
+                    wait_time = (2**attempt) + random.uniform(0, 0.5)  # nosec B311
                     logger.warning(f"Query failed, retrying in {wait_time:.2f}s: {e}")
                     time.sleep(wait_time)
                     continue
