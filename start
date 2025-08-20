@@ -1,0 +1,13 @@
+#!/bin/bash
+# Convenience script to start the server with auto-port management
+# Usage: ./start [--db path/to/database.db] [other options]
+# If no --db is specified, defaults to election_data.db
+
+# Check if --db is already in the arguments
+if [[ "$*" == *"--db"* ]]; then
+    # User provided --db, just add auto-port
+    exec python scripts/start_server.py --auto-port "$@"
+else
+    # No --db provided, use default
+    exec python scripts/start_server.py --db election_data.db --auto-port "$@"
+fi

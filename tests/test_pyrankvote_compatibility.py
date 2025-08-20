@@ -12,9 +12,9 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from analysis.stv import STVRound
-from analysis.stv_pyrankvote import PyRankVoteSTVTabulator
-from data.database import CVRDatabase
+from analysis.stv import STVRound  # noqa: E402
+from analysis.stv_pyrankvote import PyRankVoteSTVTabulator  # noqa: E402
+from data.database import CVRDatabase  # noqa: E402
 
 
 class TestPyRankVoteInterface(unittest.TestCase):
@@ -141,7 +141,7 @@ class TestPyRankVoteInterface(unittest.TestCase):
     def test_winners_identification(self):
         """Test that winners are correctly identified."""
         tabulator = PyRankVoteSTVTabulator(self.db, seats=2)
-        rounds = tabulator.run_stv_tabulation()
+        tabulator.run_stv_tabulation()
 
         # Should have exactly 2 winners
         self.assertEqual(len(tabulator.winners), 2)

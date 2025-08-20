@@ -46,12 +46,12 @@ repos:
         args: [-c, pyproject.toml]
         additional_dependencies: ["bandit[toml]"]
 
-  # Fast test suite (local hook)
+  # Comprehensive test suite (local hook)
   - repo: local
     hooks:
-      - id: fast-tests
-        name: Fast Test Suite
-        entry: python -m pytest tests/unit -v --tb=short
+      - id: comprehensive-tests
+        name: Comprehensive Test Suite
+        entry: python -m pytest tests/ -v --tb=short -x
         language: system
         pass_filenames: false
         stages: [pre-commit]

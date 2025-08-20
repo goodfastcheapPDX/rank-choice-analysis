@@ -65,6 +65,24 @@ test-fast: ## Run fast tests (unit + smoke)
 test-election-hooks: ## Run custom election-specific pre-commit hooks
 	$(PYTHON) scripts/pre_commit_hooks.py
 
+# Coverage testing
+.PHONY: test-cov
+test-cov: ## Run all tests with coverage report
+	$(PYTHON) -m pytest --cov=src --cov-report=term-missing tests/
+
+.PHONY: test-cov-html
+test-cov-html: ## Generate HTML coverage report
+	$(PYTHON) -m pytest --cov=src --cov-report=html tests/
+	@echo "Coverage report generated in htmlcov/index.html"
+
+.PHONY: test-cov-unit
+test-cov-unit: ## Run unit tests with coverage
+	$(PYTHON) -m pytest --cov=src --cov-report=term-missing tests/unit
+
+.PHONY: test-cov-golden
+test-cov-golden: ## Run golden tests with coverage
+	$(PYTHON) -m pytest --cov=src --cov-report=term-missing tests/golden
+
 # Pre-commit
 .PHONY: pre-commit
 pre-commit: ## Run pre-commit hooks on all files
@@ -124,7 +142,7 @@ clean: clean-db ## Clean up generated files
 
 # CI/CD simulation
 .PHONY: ci
-ci: check test-all test-election-hooks ## Simulate CI pipeline (format, lint, test)
+ci: check test-cov test-election-hooks ## Simulate CI pipeline (format, lint, comprehensive test with coverage)
 	@echo "✅ CI pipeline completed successfully!"
 
 # Development workflow

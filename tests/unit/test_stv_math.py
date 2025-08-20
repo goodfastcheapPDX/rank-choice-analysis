@@ -5,7 +5,7 @@ These tests verify mathematical calculations and invariants
 without requiring full database setups.
 """
 
-from fractions import Fraction
+# from fractions import Fraction  # Not currently used but may be needed for exact math
 
 import pytest
 

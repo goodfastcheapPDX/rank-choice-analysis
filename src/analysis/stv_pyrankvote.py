@@ -1,8 +1,7 @@
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 import pandas as pd
-import pyrankvote
 from pyrankvote import Ballot, Candidate, single_transferable_vote
 
 try:
@@ -216,7 +215,7 @@ class PyRankVoteSTVTabulator:
             # Convert results to our format
             self.rounds = self._convert_pyrankvote_results_to_rounds()
 
-            logger.info(f"STV tabulation complete:")
+            logger.info("STV tabulation complete:")
             logger.info(f"Winners: {self.winners}")
             logger.info(f"Total rounds: {len(self.rounds)}")
 

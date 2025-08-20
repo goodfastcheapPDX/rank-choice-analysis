@@ -54,11 +54,11 @@ def test_required_files():
 def test_core_dependencies():
     """Test that core dependencies can be imported."""
     try:
-        import duckdb
-        import fastapi
-        import numpy
-        import pandas
-        import plotly
+        import duckdb  # noqa: F401
+        import fastapi  # noqa: F401
+        import numpy  # noqa: F401
+        import pandas  # noqa: F401
+        import plotly  # noqa: F401
     except ImportError as e:
         pytest.fail(f"Core dependency import failed: {e}")
 
@@ -68,9 +68,9 @@ def test_core_dependencies():
 def test_development_dependencies():
     """Test that development dependencies are available."""
     try:
-        import black
-        import isort
-        import pytest
+        import black  # noqa: F401
+        import isort  # noqa: F401
+        import pytest as pytest_test  # noqa: F401
     except ImportError as e:
         pytest.fail(f"Development dependency import failed: {e}")
 

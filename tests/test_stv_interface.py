@@ -12,8 +12,8 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from analysis.stv import STVRound, STVTabulator
-from data.database import CVRDatabase
+from analysis.stv import STVRound, STVTabulator  # noqa: E402
+from data.database import CVRDatabase  # noqa: E402
 
 
 class TestSTVInterface(unittest.TestCase):
@@ -96,6 +96,7 @@ class TestSTVInterface(unittest.TestCase):
     def test_run_stv_tabulation_return_type(self):
         """Test that run_stv_tabulation returns correct type."""
         tabulator = STVTabulator(self.db, seats=2)
+        tabulator.use_retry = False  # Disable retry for in-memory database
         rounds = tabulator.run_stv_tabulation()
 
         # Should return a list
@@ -111,6 +112,7 @@ class TestSTVInterface(unittest.TestCase):
     def test_stv_round_structure(self):
         """Test STVRound objects have correct structure."""
         tabulator = STVTabulator(self.db, seats=2)
+        tabulator.use_retry = False  # Disable retry for in-memory database
         rounds = tabulator.run_stv_tabulation()
 
         first_round = rounds[0]
@@ -140,7 +142,8 @@ class TestSTVInterface(unittest.TestCase):
     def test_winners_identification(self):
         """Test that winners are correctly identified."""
         tabulator = STVTabulator(self.db, seats=2)
-        rounds = tabulator.run_stv_tabulation()
+        tabulator.use_retry = False  # Disable retry for in-memory database
+        tabulator.run_stv_tabulation()
 
         # Should have exactly 2 winners
         self.assertEqual(len(tabulator.winners), 2)
@@ -153,6 +156,7 @@ class TestSTVInterface(unittest.TestCase):
     def test_quota_consistency(self):
         """Test quota calculation consistency across rounds."""
         tabulator = STVTabulator(self.db, seats=2)
+        tabulator.use_retry = False  # Disable retry for in-memory database
         rounds = tabulator.run_stv_tabulation()
 
         # All rounds should have the same quota (no vote exhaustion in this test)
@@ -167,6 +171,7 @@ class TestSTVInterface(unittest.TestCase):
     def test_round_progression(self):
         """Test that round numbers progress correctly."""
         tabulator = STVTabulator(self.db, seats=2)
+        tabulator.use_retry = False  # Disable retry for in-memory database
         rounds = tabulator.run_stv_tabulation()
 
         # Round numbers should start at 1 and increment
@@ -176,6 +181,7 @@ class TestSTVInterface(unittest.TestCase):
     def test_vote_totals_consistency(self):
         """Test vote totals are consistent."""
         tabulator = STVTabulator(self.db, seats=2)
+        tabulator.use_retry = False  # Disable retry for in-memory database
         rounds = tabulator.run_stv_tabulation()
 
         first_round = rounds[0]
@@ -192,6 +198,7 @@ class TestSTVInterface(unittest.TestCase):
     def test_transfer_structure(self):
         """Test transfer data structure."""
         tabulator = STVTabulator(self.db, seats=2)
+        tabulator.use_retry = False  # Disable retry for in-memory database
         rounds = tabulator.run_stv_tabulation()
 
         for round_obj in rounds:
@@ -212,6 +219,7 @@ class TestSTVInterface(unittest.TestCase):
         """Test interface works with different seat counts."""
         for seats in [1, 2, 3]:
             tabulator = STVTabulator(self.db, seats=seats)
+            tabulator.use_retry = False  # Disable retry for in-memory database
             rounds = tabulator.run_stv_tabulation()
 
             # Should complete successfully
@@ -224,9 +232,11 @@ class TestSTVInterface(unittest.TestCase):
     def test_reproducibility(self):
         """Test that results are reproducible."""
         tabulator1 = STVTabulator(self.db, seats=2)
+        tabulator1.use_retry = False  # Disable retry for in-memory database
         rounds1 = tabulator1.run_stv_tabulation()
 
         tabulator2 = STVTabulator(self.db, seats=2)
+        tabulator2.use_retry = False  # Disable retry for in-memory database
         rounds2 = tabulator2.run_stv_tabulation()
 
         # Results should be identical

@@ -360,7 +360,10 @@ class STVTabulator:
             # Check for winners (candidates meeting quota)
             round_winners = []
             for candidate_id in continuing:
-                if vote_totals[candidate_id] >= quota:
+                if (
+                    vote_totals[candidate_id] >= quota
+                    and len(self.winners) < self.seats
+                ):
                     round_winners.append(candidate_id)
                     self.winners.append(candidate_id)
                     logger.info(
@@ -465,7 +468,7 @@ class STVTabulator:
                 logger.warning("Stopping after 50 rounds - possible infinite loop")
                 break
 
-        logger.info(f"\nSTV tabulation complete:")
+        logger.info("\nSTV tabulation complete:")
         logger.info(f"Winners: {self.winners}")
         logger.info(f"Total rounds: {len(self.rounds)}")
 
@@ -548,7 +551,7 @@ class STVTabulator:
                             for r in self.rounds
                             if candidate_id in r.winners_this_round
                         ),
-                        None,
+                        0,  # Use 0 instead of None for non-elected candidates
                     ),
                 }
             )

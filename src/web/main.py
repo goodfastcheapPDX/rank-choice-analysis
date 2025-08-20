@@ -1,4 +1,5 @@
 import logging
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -49,10 +50,18 @@ def get_database() -> CVRDatabase:
     """
     Get database connection using improved connection management.
     Creates read-only connections by default to avoid locking issues.
+
+    Falls back to environment variable if global db_path is None (e.g., during reload).
     """
     global db_path
     if not db_path:
-        raise HTTPException(status_code=500, detail="Database not configured")
+        # Check environment variable for database path (useful during reload)
+        env_db_path = os.environ.get("RVA_DATABASE_PATH")
+        if env_db_path:
+            db_path = env_db_path
+            logger.info(f"Using database path from environment: {db_path}")
+        else:
+            raise HTTPException(status_code=500, detail="Database not configured")
     return CVRDatabase(db_path, read_only=True)
 
 
@@ -60,6 +69,8 @@ def set_database_path(path: str):
     """Set the database path for the application."""
     global db_path
     db_path = path
+    # Also set environment variable to persist across reloads
+    os.environ["RVA_DATABASE_PATH"] = path
     logger.info(f"Database path set to: {path}")
 
     # Test connection to ensure database is accessible
@@ -265,7 +276,7 @@ async def get_stv_results(seats: int = 3):
         final_results = tabulator.get_final_results()
         round_summary = tabulator.get_round_summary()
 
-        return {
+        result = {
             "final_results": final_results.to_dict("records"),
             "round_summary": round_summary.to_dict("records"),
             "winners": tabulator.winners,
@@ -273,6 +284,7 @@ async def get_stv_results(seats: int = 3):
                 len(tabulator.rounds) if hasattr(tabulator, "rounds") else 0
             ),
         }
+        return convert_numpy_types(result)
     except Exception as e:
         logger.error(f"Error running STV: {e}")
         raise HTTPException(status_code=500, detail=f"STV calculation failed: {str(e)}")

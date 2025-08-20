@@ -4,6 +4,7 @@ Start the web server for the Ranked Elections Analyzer.
 """
 
 import argparse
+import socket
 import sys
 from pathlib import Path
 
@@ -12,7 +13,19 @@ import uvicorn
 # Add src to path so we can import our modules
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from web.main import app, set_database_path
+from web.main import set_database_path  # noqa: E402
+
+
+def find_available_port(host, start_port, max_attempts=10):
+    """Find an available port starting from start_port."""
+    for port in range(start_port, start_port + max_attempts):
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.bind((host, port))
+                return port
+        except OSError:
+            continue
+    return None
 
 
 def main():
@@ -27,6 +40,11 @@ def main():
     parser.add_argument(
         "--reload", action="store_true", help="Enable auto-reload for development"
     )
+    parser.add_argument(
+        "--auto-port",
+        action="store_true",
+        help="Automatically find available port if default is taken",
+    )
 
     args = parser.parse_args()
 
@@ -39,12 +57,23 @@ def main():
     # Set the database path for the web application
     set_database_path(str(db_path.absolute()))
 
-    print(f"Starting Ranked Elections Analyzer web server...")
-    print(f"Database: {db_path.absolute()}")
-    print(f"Server: http://{args.host}:{args.port}")
-    print(f"Press Ctrl+C to stop")
+    # Find available port if auto-port is enabled
+    port = args.port
+    if args.auto_port:
+        available_port = find_available_port(args.host, args.port)
+        if available_port is None:
+            print(f"Error: No available ports found starting from {args.port}")
+            sys.exit(1)
+        elif available_port != args.port:
+            print(f"Port {args.port} is taken, using port {available_port} instead")
+        port = available_port
 
-    uvicorn.run("web.main:app", host=args.host, port=args.port, reload=args.reload)
+    print("Starting Ranked Elections Analyzer web server...")
+    print(f"Database: {db_path.absolute()}")
+    print(f"Server: http://{args.host}:{port}")
+    print("Press Ctrl+C to stop")
+
+    uvicorn.run("web.main:app", host=args.host, port=port, reload=args.reload)
 
 
 if __name__ == "__main__":
