@@ -1,8 +1,13 @@
+from unittest.mock import Mock
+
 import numpy as np
+import pandas as pd
 import pytest
 
 from src.analysis.coalition import (
     CandidateAffinity,
+    CoalitionAnalyzer,
+    CoalitionGroup,
     DetailedCandidatePair,
     convert_numpy_types,
 )
@@ -377,3 +382,78 @@ class TestCoalitionDataClasses:
         assert isinstance(pair.avg_ranking_distance, (int, float))
         assert isinstance(pair.basic_affinity_score, (int, float))
         assert isinstance(pair.coalition_strength_score, (int, float))
+
+
+class TestCoalitionGroup:
+    """Test CoalitionGroup data class."""
+
+    def test_coalition_group_creation(self):
+        """Test CoalitionGroup data class creation."""
+        group = CoalitionGroup(
+            coalition_id="progressive_coalition",
+            candidates=[1, 2, 3],
+            candidate_names=["Alice", "Bob", "Charlie"],
+            core_supporters=150,
+            coalition_strength=0.85,
+        )
+
+        assert group.coalition_id == "progressive_coalition"
+        assert len(group.candidates) == 3
+        assert len(group.candidate_names) == 3
+        assert group.core_supporters == 150
+        assert group.coalition_strength == 0.85
+
+
+class TestCoalitionAnalyzer:
+    """Test CoalitionAnalyzer class functionality."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.mock_db = Mock()
+        self.analyzer = CoalitionAnalyzer(self.mock_db)
+
+    def test_coalition_analyzer_initialization(self):
+        """Test CoalitionAnalyzer initialization."""
+        assert self.analyzer.db is self.mock_db
+        assert self.analyzer.candidates_df is None
+        assert self.analyzer.ballot_counts is None
+
+    def test_load_candidate_data_success(self):
+        """Test successful candidate data loading."""
+        # Mock candidates data
+        mock_candidates = pd.DataFrame(
+            {"candidate_id": [1, 2, 3], "candidate_name": ["Alice", "Bob", "Charlie"]}
+        )
+
+        # Mock ballot counts data
+        mock_ballot_counts = pd.DataFrame(
+            {"candidate_id": [1, 2, 3], "total_ballots": [1000, 800, 600]}
+        )
+
+        self.mock_db.query.side_effect = [mock_candidates, mock_ballot_counts]
+
+        self.analyzer._load_candidate_data()
+
+        assert len(self.analyzer.candidates_df) == 3
+        assert len(self.analyzer.ballot_counts) == 3
+        assert self.mock_db.query.call_count == 2
+
+    def test_load_candidate_data_caching(self):
+        """Test that candidate data is cached after first load."""
+        # Mock data
+        mock_candidates = pd.DataFrame(
+            {"candidate_id": [1, 2], "candidate_name": ["Alice", "Bob"]}
+        )
+        mock_ballot_counts = pd.DataFrame(
+            {"candidate_id": [1, 2], "total_ballots": [500, 400]}
+        )
+
+        self.mock_db.query.side_effect = [mock_candidates, mock_ballot_counts]
+
+        # First call should query database
+        self.analyzer._load_candidate_data()
+        assert self.mock_db.query.call_count == 2
+
+        # Second call should not query database again
+        self.analyzer._load_candidate_data()
+        assert self.mock_db.query.call_count == 2  # No additional calls

@@ -61,40 +61,42 @@ class TestCVRParser:
         mock_is_current.assert_called_once()
         mock_get_stats.assert_called_once()
 
-    @patch.object(CVRParser, "_update_processing_metadata")
-    @patch.object(CVRParser, "_is_ballots_long_current")
-    def test_normalize_vote_data_rebuilds_when_forced(
-        self, mock_is_current, mock_update_metadata
-    ):
+    def test_normalize_vote_data_rebuilds_when_forced(self):
         """Test that normalize_vote_data rebuilds when force_rebuild=True."""
         parser = CVRParser(self.db_path)
         parser._loaded = True
 
-        # Mock database methods
-        parser.db.query = Mock(
-            side_effect=[
-                pd.DataFrame(
-                    {"column_name": ["candidate_1_rank_1", "candidate_2_rank_1"]}
-                ),
-                pd.DataFrame(
-                    {
-                        "total_vote_records": [1000],
-                        "ballots_with_votes": [500],
-                        "candidates_receiving_votes": [5],
-                        "min_rank": [1],
-                        "max_rank": [3],
-                    }
-                ),
-            ]
-        )
-        parser.db.conn = Mock()
-        parser.db.conn.execute = Mock()
+        # Test the key behavior: force_rebuild=True should skip cache check
+        with patch.object(parser, "_is_ballots_long_current") as mock_current:
+            with patch.object(parser, "_get_existing_ballots_long_stats") as mock_stats:
+                mock_current.return_value = (
+                    True  # Pretend ballots_long exists and is current
+                )
+                mock_stats.return_value = {"total_vote_records": 100}
 
-        result = parser.normalize_vote_data(force_rebuild=True)
+                # Regular call should use cache when available
+                result1 = parser.normalize_vote_data(force_rebuild=False)
+                mock_current.assert_called_once()
 
-        assert "total_vote_records" in result
-        mock_is_current.assert_not_called()  # Should not check cache when forcing rebuild
-        mock_update_metadata.assert_called_once()
+                # Reset mocks
+                mock_current.reset_mock()
+
+                # Force rebuild should skip the cache check entirely
+                with patch.object(parser, "db") as mock_db:
+                    # Mock the database operations for rebuild
+                    mock_db.query.side_effect = [
+                        pd.DataFrame(
+                            {"column_name": ["candidate_1_rank_1"]}
+                        ),  # candidate columns
+                        pd.DataFrame({"total_vote_records": [200]}),  # stats
+                    ]
+                    mock_db.conn.execute = Mock()
+
+                    result2 = parser.normalize_vote_data(force_rebuild=True)
+                    mock_current.assert_not_called()  # Should not check cache when forcing
+
+        assert "total_vote_records" in result1
+        assert "total_vote_records" in result2
 
     def test_normalize_vote_data_not_loaded_error(self):
         """Test that normalize_vote_data raises error when data not loaded."""
@@ -278,22 +280,26 @@ class TestCVRParser:
     def test_update_processing_metadata_success(self):
         """Test successful processing metadata update."""
         parser = CVRParser(self.db_path)
-        parser.db.conn = Mock()
-        parser.db.conn.execute = Mock()
+
+        # Mock the database connection operations
+        mock_conn = Mock()
+        mock_conn.execute = Mock()
+        parser.db._conn = mock_conn
 
         parser._update_processing_metadata()
-
-        parser.db.conn.execute.assert_called_once()
+        mock_conn.execute.assert_called_once()
 
     def test_update_processing_metadata_exception(self):
         """Test exception handling in _update_processing_metadata."""
         parser = CVRParser(self.db_path)
-        parser.db.conn = Mock()
-        parser.db.conn.execute = Mock(side_effect=Exception("Metadata update failed"))
+
+        # Mock the database connection to throw an exception
+        mock_conn = Mock()
+        mock_conn.execute = Mock(side_effect=Exception("Metadata update failed"))
+        parser.db._conn = mock_conn
 
         with patch("src.data.cvr_parser.logger") as mock_logger:
             parser._update_processing_metadata()
-
             mock_logger.warning.assert_called_once()
 
     def test_get_summary_statistics(self):

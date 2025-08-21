@@ -117,9 +117,11 @@ class OfficialResultsParser:
         for line in lines[:10]:
             line = line.strip()
             if "Election Date" in line:
-                self.metadata["election_date"] = line.split(",")[1]
+                parts = line.split(",", 1)  # Split only on first comma
+                self.metadata["election_date"] = parts[1].strip()
             elif "Report Date" in line:
-                self.metadata["report_date"] = line.split(",")[1]
+                parts = line.split(",", 1)  # Split only on first comma
+                self.metadata["report_date"] = parts[1].strip()
             elif "Registered Voters in District" in line:
                 self.metadata["registered_voters"] = int(line.split(",")[1])
             elif "Election Threshold" in line:

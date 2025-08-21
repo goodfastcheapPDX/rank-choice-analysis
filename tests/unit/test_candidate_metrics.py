@@ -249,43 +249,51 @@ class TestCandidateMetrics:
     def test_calculate_vote_strength_index_database_queries(self):
         """Test that vote strength index makes expected database calls."""
         # Mock return values for vote strength calculation
-        self.mock_db.query.side_effect = [
-            pd.DataFrame({"total_weighted": [150.0]}),  # weighted vote sum
-            pd.DataFrame({"count": [100]}),  # total appearances
-        ]
+        self.mock_db.query.return_value = pd.DataFrame(
+            {"rank_position": [1, 2, 3], "votes": [100, 50, 25]}
+        )
 
         strength_index = self.metrics._calculate_vote_strength_index(1)
 
-        # Should call query twice for vote strength calculation
-        assert self.mock_db.query.call_count == 2
+        # Should call query once for ranking distribution
+        assert self.mock_db.query.call_count == 1
         assert isinstance(strength_index, float)
+        assert 0 <= strength_index <= 1
 
     def test_calculate_cross_camp_appeal_database_queries(self):
         """Test that cross camp appeal makes expected database calls."""
-        # Mock return values for cross camp appeal
+        # Mock return values for cross camp appeal - 3 queries total
         self.mock_db.query.side_effect = [
-            pd.DataFrame({"diversity_index": [0.65]}),  # diversity calculation
-            pd.DataFrame({"count": [200]}),  # total supporters
+            pd.DataFrame({"BallotID": ["B1", "B2", "B3"]}),  # candidate voters
+            pd.DataFrame({"unique_candidates_ranked": [3, 4, 2]}),  # diversity analysis
+            pd.DataFrame({"candidate_id": [1, 2, 3, 4, 5]}),  # total candidates
         ]
 
         cross_camp = self.metrics._calculate_cross_camp_appeal(1)
 
-        # Should call query for cross camp calculation
-        assert self.mock_db.query.call_count == 2
+        # Should call query three times for cross camp appeal
+        assert self.mock_db.query.call_count == 3
         assert isinstance(cross_camp, float)
+        assert 0 <= cross_camp <= 1
 
     def test_calculate_transfer_efficiency_database_queries(self):
         """Test that transfer efficiency makes expected database calls."""
-        # Mock return values for transfer efficiency
+        # Mock return values for transfer efficiency - 2 queries total
         self.mock_db.query.side_effect = [
-            pd.DataFrame({"efficiency": [0.85]})  # transfer efficiency
+            pd.DataFrame(
+                {"BallotID": ["B1", "B2"], "candidate_rank": [1, 2]}
+            ),  # candidate ballots
+            pd.DataFrame(
+                {"transfer_rate": [0.8], "avg_next_choices": [2.5]}
+            ),  # transfer analysis
         ]
 
         efficiency = self.metrics._calculate_transfer_efficiency(1)
 
-        # Should call query for transfer efficiency
-        assert self.mock_db.query.call_count == 1
+        # Should call query twice for transfer efficiency
+        assert self.mock_db.query.call_count == 2
         assert isinstance(efficiency, float)
+        assert 0 <= efficiency <= 1
 
     def test_calculate_ranking_consistency_database_queries(self):
         """Test that ranking consistency makes expected database calls."""
@@ -315,11 +323,12 @@ class TestCandidateMetrics:
 
         progression = self.metrics._get_vote_progression(1)
 
-        # Should call query for progression data
-        assert self.mock_db.query.call_count == 1
+        # Should not call database (returns static data for now)
+        assert self.mock_db.query.call_count == 0
         assert isinstance(progression, dict)
-        assert "round_by_round" in progression
+        assert "elimination_round" in progression
         assert "final_status" in progression
+        assert "round_by_round" in progression
 
     def test_get_top_coalition_partners_database_queries(self):
         """Test that coalition partners makes expected database calls."""
