@@ -1,0 +1,9 @@
+{
+  "instance": "secondary",
+  "pid": "PLACEHOLDER",
+  "status": "not_started",
+  "last_activity": "TIMESTAMP_PLACEHOLDER",
+  "test_phase": "waiting",
+  "messages_sent": 0,
+  "messages_received": 0
+}

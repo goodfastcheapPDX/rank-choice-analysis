@@ -1,0 +1,10 @@
+{
+  "timestamp": "TIMESTAMP_PLACEHOLDER",
+  "from": "secondary",
+  "to": "primary",
+  "message": "MESSAGE_PLACEHOLDER",
+  "sequence": 2,
+  "status": "response_sent",
+  "test_id": "ping_pong_001",
+  "original_message": "ORIGINAL_MESSAGE_PLACEHOLDER"
+}

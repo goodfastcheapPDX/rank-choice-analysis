@@ -133,7 +133,7 @@ Jane Smith,12345,7.48%,0,0%,0,0%
             ].iloc[0]
             assert dan_ryan["first_choice_votes"] == 25123
             assert dan_ryan["final_votes"] == 35678
-            assert dan_ryan["is_winner"] is True
+            assert bool(dan_ryan["is_winner"])
 
             # Check eliminated candidate
             jane_smith = final_results[
@@ -141,7 +141,7 @@ Jane Smith,12345,7.48%,0,0%,0,0%
             ].iloc[0]
             assert jane_smith["first_choice_votes"] == 12345
             assert jane_smith["final_votes"] == 0
-            assert jane_smith["is_winner"] is False
+            assert not bool(jane_smith["is_winner"])
         finally:
             os.unlink(temp_file)
 
@@ -251,7 +251,7 @@ Jane Smith,12345,7.48%,0,0%,0,0%
             )
 
             assert results["winners_match"] is True
-            assert results["verification_passed"] is True
+            assert bool(results["verification_passed"])
             assert results["total_vote_difference"] == 0
             assert results["candidates_with_differences"] == 0
             assert len(results["missing_winners"]) == 0
@@ -271,7 +271,7 @@ Jane Smith,12345,7.48%,0,0%,0,0%
             )
 
             assert results["winners_match"] is False
-            assert results["verification_passed"] is False
+            assert not bool(results["verification_passed"])
             assert len(results["missing_winners"]) == 1
             assert len(results["extra_winners"]) == 1
             assert "Nat West" in results["missing_winners"]
@@ -295,7 +295,7 @@ Jane Smith,12345,7.48%,0,0%,0,0%
             )
 
             assert results["winners_match"] is True  # Winners still match
-            assert results["verification_passed"] is False  # But vote counts don't
+            assert not bool(results["verification_passed"])  # But vote counts don't
             assert results["total_vote_difference"] == 123
             assert results["candidates_with_differences"] == 1
         finally:
@@ -340,7 +340,7 @@ Jane Smith,12345,7.48%,0,0%,0,0%
             )
 
             assert results["winners_match"] is True
-            assert results["verification_passed"] is True
+            assert bool(results["verification_passed"])
         finally:
             os.unlink(temp_file)
 

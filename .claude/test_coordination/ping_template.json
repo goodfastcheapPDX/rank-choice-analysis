@@ -1,0 +1,9 @@
+{
+  "timestamp": "TIMESTAMP_PLACEHOLDER",
+  "from": "primary",
+  "to": "secondary",
+  "message": "MESSAGE_PLACEHOLDER",
+  "sequence": 1,
+  "status": "waiting_for_response",
+  "test_id": "ping_pong_001"
+}

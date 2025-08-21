@@ -1,0 +1,9 @@
+{
+  "instance": "primary",
+  "pid": "84306",
+  "status": "cleanup",
+  "last_activity": "2025-08-20T14:16:18-07:00",
+  "test_phase": "finished",
+  "messages_sent": 1,
+  "messages_received": 1
+}

@@ -1,3 +1,9 @@
+`git commit --no-verify` is never allowed. do not use the `--no-verify` option with any git command, ever, for any reason. there will be profound consequences if you do. if an attempted commit results in significant errors outside the scope of the current work, that's fine. just incorporate those fixes into the current work. treat them as a top priority.
+
+stop and commit frequently as you make progress. a git commit should accompany at least every individual task or todo you complete. it is better to have too many commits than too few. the more often you commit, the less likely you are to run into unrelated failures and issues
+
+fix issues as they arise, commit often to surface the issues quickly.
+
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.

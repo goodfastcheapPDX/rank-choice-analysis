@@ -1,0 +1,8 @@
+{
+  "timestamp": "2025-08-20T14:17:00-07:00",
+  "from": "secondary",
+  "to": "primary",
+  "message": "Test pong response for debugging",
+  "sequence": 2,
+  "status": "response_sent"
+}

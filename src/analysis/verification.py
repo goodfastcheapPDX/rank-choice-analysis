@@ -170,7 +170,8 @@ class OfficialResultsParser:
                         if parts[i] and parts[i] != "":
                             try:
                                 # Check if it's a vote count (not a percentage)
-                                if "%" not in parts[i] and "." in parts[i]:
+                                if "%" not in parts[i]:
+                                    # Try to convert to float/int (vote count)
                                     final_votes = float(parts[i])
                                     break
                             except ValueError:

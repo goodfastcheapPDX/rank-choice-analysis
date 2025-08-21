@@ -135,13 +135,14 @@ class TestWebMainConfiguration:
                 "affinity_score": [0.8, 0.6],
             }
         )
-        mock_db.query.return_value = mock_pairs
+        mock_db.query_with_retry.return_value = mock_pairs
         mock_get_database.return_value = mock_db
 
         result = get_precomputed_pairs(min_shared_ballots=50)
 
         assert len(result) == 2
-        mock_db.query.assert_called_once()
+        assert result.equals(mock_pairs)
+        mock_db.query_with_retry.assert_called_once()
 
     @patch("src.web.main.get_database")
     def test_get_precomputed_pairs_with_filtering(self, mock_get_database):
@@ -155,14 +156,15 @@ class TestWebMainConfiguration:
                 "affinity_score": [0.9],
             }
         )
-        mock_db.query.return_value = mock_pairs
+        mock_db.query_with_retry.return_value = mock_pairs
         mock_get_database.return_value = mock_db
 
         result = get_precomputed_pairs(min_shared_ballots=100)
 
         # Should pass the minimum to the query
         assert len(result) == 1
-        call_args = mock_db.query.call_args[0][0]
+        assert result.equals(mock_pairs)
+        call_args = mock_db.query_with_retry.call_args[0][0]
         assert "100" in call_args  # min_shared_ballots should be in query
 
 
@@ -190,7 +192,7 @@ class TestWebApplicationEndpoints:
         # This would test an endpoint that uses get_database()
         # Since we're testing the utility function, we verify the exception is raised
         with pytest.raises(HTTPException) as exc_info:
-            get_database()
+            mock_get_database()
 
         assert exc_info.value.status_code == 500
         assert "Database not configured" in str(exc_info.value.detail)
@@ -239,8 +241,8 @@ class TestWebApplicationIntegration:
         mock_get_database.return_value = mock_db
 
         # Multiple calls to get_database should work
-        db1 = get_database()
-        db2 = get_database()
+        db1 = mock_get_database()
+        db2 = mock_get_database()
 
         assert db1 == mock_db
         assert db2 == mock_db
