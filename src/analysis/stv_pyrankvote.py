@@ -56,13 +56,14 @@ class PyRankVoteSTVTabulator:
         return self.db.query(
             """
             SELECT
-                candidate_id,
-                candidate_name,
+                bl.candidate_id,
+                c.candidate_name,
                 COUNT(*) as votes,
                 1.0 * COUNT(*) as weight
-            FROM ballots_long
-            WHERE rank_position = 1
-            GROUP BY candidate_id, candidate_name
+            FROM ballots_long bl
+            JOIN candidates c ON bl.candidate_id = c.candidate_id
+            WHERE bl.rank_position = 1
+            GROUP BY bl.candidate_id, c.candidate_name
             ORDER BY votes DESC
         """
         )

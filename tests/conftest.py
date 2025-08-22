@@ -87,3 +87,9 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "smoke: marks tests as smoke tests (basic functionality check)"
     )
+    config.addinivalue_line(
+        "markers", "critical: marks tests as critical mathematical correctness tests"
+    )
+    config.addinivalue_line(
+        "markers", "slow: marks tests as slow performance benchmarking tests"
+    )
