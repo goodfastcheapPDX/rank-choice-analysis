@@ -150,6 +150,7 @@ class TestCandidateMetrics:
             "total_ballots": 1000,
             "first_choice_votes": 250,
             "first_choice_percentage": 25.0,
+            "total_election_ballots": 1000,  # Add the required field that was missing
         }
 
         # Set up mock return values
@@ -460,6 +461,6 @@ class TestCandidateMetrics:
             profile = self.metrics.get_comprehensive_candidate_profile(1)
 
             assert profile is not None
-            assert profile.total_ballots == 0
+            assert profile.total_ballots == 1000  # total_election_ballots, not candidate-specific ballots
             assert profile.first_choice_votes == 0
             assert profile.first_choice_percentage == 0.0

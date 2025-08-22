@@ -4,6 +4,7 @@ Start the web server for the Ranked Elections Analyzer.
 """
 
 import argparse
+import os
 import socket
 import sys
 from pathlib import Path
@@ -32,7 +33,7 @@ def main():
     parser = argparse.ArgumentParser(description="Start the web server")
     parser.add_argument("--db", required=True, help="Path to DuckDB database file")
     parser.add_argument(
-        "--host", default="127.0.0.1", help="Host to bind to (default: 127.0.0.1)"
+        "--host", default="0.0.0.0", help="Host to bind to (default: 0.0.0.0)"
     )
     parser.add_argument(
         "--port", type=int, default=8000, help="Port to bind to (default: 8000)"
@@ -57,23 +58,26 @@ def main():
     # Set the database path for the web application
     set_database_path(str(db_path.absolute()))
 
-    # Find available port if auto-port is enabled
-    port = args.port
-    if args.auto_port:
-        available_port = find_available_port(args.host, args.port)
+    # Honor managed hosting env vars if present (Render/Heroku)
+    host = os.getenv("HOST", args.host)
+    port = int(os.getenv("PORT", args.port))
+
+    # If auto-port, only probe when $PORT is NOT managed
+    if args.auto_port and "PORT" not in os.environ:
+        available_port = find_available_port(host, port)
         if available_port is None:
-            print(f"Error: No available ports found starting from {args.port}")
+            print(f"Error: No available ports found starting from {port}")
             sys.exit(1)
-        elif available_port != args.port:
-            print(f"Port {args.port} is taken, using port {available_port} instead")
+        elif available_port != port:
+            print(f"Port {port} is taken, using port {available_port} instead")
         port = available_port
 
     print("Starting Ranked Elections Analyzer web server...")
     print(f"Database: {db_path.absolute()}")
-    print(f"Server: http://{args.host}:{port}")
+    print(f"Server: http://{host}:{port}")
     print("Press Ctrl+C to stop")
 
-    uvicorn.run("web.main:app", host=args.host, port=port, reload=args.reload)
+    uvicorn.run("web.main:app", host=host, port=port, reload=args.reload)
 
 
 if __name__ == "__main__":
