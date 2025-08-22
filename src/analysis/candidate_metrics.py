@@ -137,7 +137,7 @@ class CandidateMetrics:
             return CandidateProfile(
                 candidate_id=candidate_id,
                 candidate_name=candidate_name,
-                total_ballots=basic_stats["total_ballots"],
+                total_ballots=basic_stats["total_election_ballots"],  # Use total election ballots for consistency
                 first_choice_votes=basic_stats["first_choice_votes"],
                 first_choice_percentage=basic_stats["first_choice_percentage"],
                 vote_strength_index=strength_index,
@@ -189,7 +189,8 @@ class CandidateMetrics:
         )
 
         return {
-            "total_ballots": total_ballots,
+            "total_ballots": total_ballots,  # Ballots mentioning this candidate
+            "total_election_ballots": total_election_ballots,  # All ballots in election
             "first_choice_votes": first_choice,
             "first_choice_percentage": round(first_choice_percentage, 2),
         }
@@ -567,6 +568,7 @@ class CandidateMetrics:
             """
             )
 
+            # Get count of ballots that have transferable preferences  
             total_transferable = self.db.query(
                 f"""
                 SELECT COUNT(DISTINCT BallotID) as count
@@ -581,9 +583,26 @@ class CandidateMetrics:
             """
             ).iloc[0]["count"]
 
-            successful_transfers = (
-                transfer_data["transfer_votes"].sum() if not transfer_data.empty else 0
-            )
+            # FIXED: Calculate transfer efficiency as the percentage of ballots 
+            # that have immediate next preferences (rank distance = 1)
+            # This represents the "clean" transfer potential
+            successful_transfers = self.db.query(
+                f"""
+                WITH candidate_ballots AS (
+                    SELECT BallotID, rank_position as candidate_rank
+                    FROM ballots_long
+                    WHERE candidate_id = {candidate_id}
+                ),
+                immediate_transfers AS (
+                    SELECT DISTINCT cb.BallotID
+                    FROM candidate_ballots cb
+                    JOIN ballots_long bl ON cb.BallotID = bl.BallotID
+                        AND bl.rank_position = cb.candidate_rank + 1
+                        AND bl.candidate_id != {candidate_id}
+                )
+                SELECT COUNT(*) as count FROM immediate_transfers
+            """
+            ).iloc[0]["count"]
             transfer_efficiency_rate = (
                 (successful_transfers / total_transferable)
                 if total_transferable > 0
